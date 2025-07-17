@@ -128,6 +128,7 @@ export default function ProfilePage() {
             <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
             <li><a href="/dashboard/tutorials"><i className="fas fa-video"></i> Tutorials</a></li>
             <li><a href="/dashboard/offers"><i className="fas fa-tags"></i> Offers</a></li>
+            <li><a href="/dashboard/help_center"><i className="fas fa-question-circle"></i> Help Center</a></li>
             <li><a href="/dashboard/settings"><i className="fas fa-cog"></i> Settings</a></li>
             <li>
               <button

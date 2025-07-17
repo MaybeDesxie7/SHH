@@ -1,51 +1,41 @@
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+'use client'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+    e.preventDefault()
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
-
-    if (loginError) {
-      setError(loginError.message);
-      setLoading(false);
+    if (error) {
+      setError(error.message)
     } else {
-      router.push('/dashboard');
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        router.push('/dashboard/admin/overview')
+      } else {
+        router.push('/dashboard')
+      }
     }
-  };
+  }
 
   return (
-    <div className="auth-container">
-      <form className="auth-box" onSubmit={handleLogin}>
-        <h2>Login</h2>
-
-        <input type="email" name="email" placeholder="Email" required onChange={handleChange} />
-        <input type="password" name="password" placeholder="Password" required onChange={handleChange} />
-
-        <button type="submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-
-        {error && <p className="auth-error">{error}</p>}
-      </form>
-    </div>
-  );
+    <form onSubmit={handleLogin}>
+      <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
+      <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
+      <button type="submit">Login</button>
+      {error && <p style={{color:'red'}}>{error}</p>}
+    </form>
+  )
 }

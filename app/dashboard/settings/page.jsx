@@ -57,6 +57,7 @@ export default function SettingsPage() {
             <li><Link href="/dashboard/tutorials"><i className="fas fa-video"></i> Tutorials</Link></li>
             <li><Link href="/dashboard/offers"><i className="fas fa-tags"></i> Offers</Link></li>
             <li><Link href="/dashboard/settings" className="active"><i className="fas fa-cog"></i> Settings</Link></li>
+            <li><a href="/dashboard/help_center"><i className="fas fa-question-circle"></i> Help Center</a></li>
             <li><button onClick={handleLogout} style={{ color: '#ff4d4d', border: 'none', background: 'none' }}><i className="fas fa-sign-out-alt"></i> Logout</button></li>
           </ul>
         </nav>
