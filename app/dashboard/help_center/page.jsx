@@ -1,36 +1,40 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
-export default function TutorialsPage() {
+export default function HelpCenterPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [tutorials, setTutorials] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [faqs, setFaqs] = useState([]);
+  const [openFAQ, setOpenFAQ] = useState(null);
 
   useEffect(() => {
-    const getUser = async () => {
+    const fetchUser = async () => {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user) return router.push('/login');
       setUser(data.user);
     };
-    getUser();
+    fetchUser();
   }, [router]);
 
   useEffect(() => {
-    if (user) fetchTutorials();
+    if (user) fetchFAQs();
   }, [user]);
 
-  const fetchTutorials = async () => {
-    const { data, error } = await supabase.from('tutorials').select('*').order('created_at', { ascending: false });
-    if (!error) setTutorials(data);
+  const fetchFAQs = async () => {
+    const { data, error } = await supabase
+      .from('help_articles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) setFaqs(data);
   };
 
-  const filteredTutorials = filter === 'all'
-    ? tutorials
-    : tutorials.filter(t => t.tags.includes(filter));
+  const toggleFAQ = (index) => {
+    setOpenFAQ(openFAQ === index ? null : index);
+  };
 
   if (!user) return <p>Loading...</p>;
 
@@ -46,9 +50,9 @@ export default function TutorialsPage() {
             <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
             <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
             <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
-            <li><a href="/dashboard/tutorials" className="active"><i className="fas fa-video"></i> Tutorials</a></li>
+            <li><a href="/dashboard/tutorials"><i className="fas fa-video"></i> Tutorials</a></li>
             <li><a href="/dashboard/offers"><i className="fas fa-tags"></i> Offers</a></li>
-            <li><a href="/dashboard/help_center"><i className="fas fa-question-circle"></i> Help Center</a></li>
+            <li><a href="/dashboard/help_center" className="active"><i className="fas fa-question-circle"></i> Help Center</a></li>
             <li><a href="/dashboard/settings"><i className="fas fa-cog"></i> Settings</a></li>
             <li>
               <button
@@ -68,34 +72,22 @@ export default function TutorialsPage() {
       <main className="main-content">
         <header>
           <div className="user-info">
-            <span>Tutorials</span>
+            <span>Help Center</span>
             <img src="https://i.pravatar.cc/100" alt="User Profile" />
           </div>
         </header>
 
-        <div className="tutorial-filter">
-          <label htmlFor="tutorialFilter">Filter by topic:</label>
-          <select id="tutorialFilter" value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="all">All</option>
-            <option value="ai">AI</option>
-            <option value="freelancing">Freelancing</option>
-            <option value="affiliate">Affiliate Marketing</option>
-            <option value="tools">Tools</option>
-            <option value="apps">App Usage</option>
-          </select>
-        </div>
-
-        <div className="tutorials-grid">
-          {filteredTutorials.map((tutorial, i) => (
-            <div key={i} className="tutorial-card">
-              <iframe src={tutorial.video_url} allowFullScreen title={tutorial.title}></iframe>
-              <h3>{tutorial.title}</h3>
-              <p>{tutorial.summary}</p>
-              <div className="tutorial-tags">
-                {tutorial.tags.map((tag, index) => (
-                  <span key={index} className="tutorial-tag">{tag}</span>
-                ))}
-              </div>
+        <div className="help-content">
+          <h2>Frequently Asked Questions</h2>
+          {faqs.length === 0 && <p>No articles found.</p>}
+          {faqs.map((faq, index) => (
+            <div key={faq.id} className="faq-item">
+              <button className="faq-question" onClick={() => toggleFAQ(index)}>
+                {faq.title}
+              </button>
+              {openFAQ === index && (
+                <p className="faq-answer">{faq.content}</p>
+              )}
             </div>
           ))}
         </div>

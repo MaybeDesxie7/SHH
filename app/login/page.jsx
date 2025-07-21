@@ -3,48 +3,74 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import Image from 'next/image';
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
   const router = useRouter();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
+    if (error) {
+      setError(error.message);
+      return;
+    }
 
-    if (loginError) {
-      setError(loginError.message);
-      setLoading(false);
+    const user_id = data.user.id;
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('user_id', user_id)
+      .single();
+
+    if (profile?.role === 'admin') {
+      router.push('/admin');
     } else {
       router.push('/dashboard');
     }
   };
 
   return (
-    <div className="auth-container">
-      <form className="auth-box" onSubmit={handleLogin}>
-        <h2>Login</h2>
-
-        <input type="email" name="email" placeholder="Email" required onChange={handleChange} />
-        <input type="password" name="password" placeholder="Password" required onChange={handleChange} />
-
-        <button type="submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-
+    <div className="auth-container" id="login-container">
+      <Image src="/logo.png" alt="Logo" width={80} height={80} className="auth-logo" />
+      <h1 className="auth-title">Login</h1>
+      <form onSubmit={handleLogin} className="auth-form">
+        <input
+          type="email"
+          id="login-email"
+          className="auth-input"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          required
+        />
+        <div className="auth-password-group">
+          <input
+            type={showPassword ? 'text' : 'password'}
+            id="login-password"
+            className="auth-input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            required
+          />
+          <span
+            className="auth-toggle"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </span>
+        </div>
         {error && <p className="auth-error">{error}</p>}
+        <button type="submit" className="auth-button">Login</button>
+        <p className="auth-switch">
+          Don’t have an account? <a href="/signup">Sign up</a>
+        </p>
       </form>
     </div>
   );

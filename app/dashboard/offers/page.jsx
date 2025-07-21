@@ -45,6 +45,7 @@ export default function OffersPage() {
             <li><Link href="/dashboard/ebooks"><i className="fas fa-book" /> Ebooks</Link></li>
             <li><Link href="/dashboard/tutorials"><i className="fas fa-video" /> Tutorials</Link></li>
             <li><Link href="/dashboard/offers" className="active"><i className="fas fa-tags" /> Offers</Link></li>
+            <li><a href="/dashboard/help_center"><i className="fas fa-question-circle"></i> Help Center</a></li>
             <li><Link href="/dashboard/settings"><i className="fas fa-cog" /> Settings</Link></li>
             <li>
               <button

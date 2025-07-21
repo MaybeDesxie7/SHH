@@ -1,100 +1,61 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import Image from 'next/image';
 
 export default function SignupPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
   const router = useRouter();
-  const [form, setForm] = useState({
-    email: '',
-    password: '',
-    name: '',
-    phone: '',
-    address: '',
-    username: '',
-    role: '',
-    avatar: '',
-    agree: false,
-  });
-
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
-  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    if (!form.agree) return setError('Please accept the terms and conditions');
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return setError(error.message);
 
-    setLoading(true);
-    setError('');
-
-    const { data, error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-    });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
-      const userId = data.user?.id;
-
-      if (userId) {
-        const { error: profileError } = await supabase.from('profiles').insert([{
-          user_id: userId, // ✅ correct foreign key column
-          name: form.name,
-          email: form.email,
-          phone: form.phone,
-          address: form.address,
-         avatar: form.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(form.name),
-        }]);
-
-        if (profileError) {
-          setError(profileError.message);
-        } else {
-          alert('Signup successful! Please check your email to verify.');
-          router.push('/login');
-        }
-      }
-
-      setLoading(false);
-    }
+    router.push('/dashboard'); // or redirect to login or onboarding
   };
 
   return (
-    <div className="auth-container">
-      <form className="auth-box" onSubmit={handleSignup}>
-        <h2>Sign Up</h2>
-
-        <input type="text" name="name" placeholder="Full Name" required onChange={handleChange} />
-        <input type="text" name="username" placeholder="Username" required onChange={handleChange} />
-        <input type="text" name="phone" placeholder="Phone Number" required onChange={handleChange} />
-        <input type="text" name="address" placeholder="Address / Country" required onChange={handleChange} />
-        <input type="email" name="email" placeholder="Email" required onChange={handleChange} />
-        <input type="password" name="password" placeholder="Password" required onChange={handleChange} />
-
-        <select name="role" required onChange={handleChange}>
-          <option value="">Select Role</option>
-          <option value="buyer">Buyer</option>
-          <option value="seller">Seller</option>
-          <option value="both">Both</option>
-        </select>
-
-        <label className="auth-checkbox">
-          <input type="checkbox" name="agree" onChange={handleChange} />
-          I agree to Smart Hustle Hub's terms and privacy policy.
-        </label>
-
-        <button type="submit" disabled={loading}>
-          {loading ? 'Signing up...' : 'Create Account'}
-        </button>
-
+    <div className="auth-container" id="signup-container">
+      <Image src="/public/images/Robot Face with Dollar Sign Logo.png" alt="Logo" width={80} height={80} className="auth-logo" />
+      <h1 className="auth-title">Sign Up</h1>
+      <form onSubmit={handleSignup} className="auth-form">
+        <input
+          type="email"
+          id="signup-email"
+          className="auth-input"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          required
+        />
+        <div className="auth-password-group">
+          <input
+            type={showPassword ? 'text' : 'password'}
+            id="signup-password"
+            className="auth-input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            required
+          />
+          <span
+            className="auth-toggle"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </span>
+        </div>
         {error && <p className="auth-error">{error}</p>}
+        <button type="submit" className="auth-button">Sign Up</button>
+        <p className="auth-switch">
+          Already have an account? <a href="/login">Log in</a>
+        </p>
       </form>
     </div>
   );
