@@ -1,131 +1,62 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import Image from 'next/image'
-import '@/styles/style.css'; 
-
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import Image from 'next/image';
 
 export default function SignupPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    phone: '',
-    address: '',
-    role: 'buyer',
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState(null)
-  const router = useRouter()
-
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
-  }
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
+  const router = useRouter();
 
   const handleSignup = async (e) => {
-    e.preventDefault()
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-    })
+    e.preventDefault();
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return setError(error.message);
 
-    if (signUpError) return setError(signUpError.message)
-
-    const user = data.user
-    const { error: profileError } = await supabase.from('profiles').insert({
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      address: formData.address,
-      role: formData.role,
-      avatar: '',
-      user_id: user.id,
-    })
-
-    if (profileError) return setError(profileError.message)
-
-    router.push('/dashboard')
-  }
-
-  const handleGoogleSignup = async () => {
-    await supabase.auth.signInWithOAuth({ provider: 'google' })
-  }
+    router.push('/dashboard'); // or redirect to login or onboarding
+  };
 
   return (
-    <div className="auth-container">
-      <form className="auth-form" onSubmit={handleSignup}>
-        <img src="/logo.png" alt="Logo" className="auth-logo" />
-        <h2>Create Your Account</h2>
-
-        {error && <p className="auth-error">{error}</p>}
-
+    <div className="auth-container" id="signup-container">
+      <Image src="/public/images/Robot Face with Dollar Sign Logo.png" alt="Logo" width={80} height={80} className="auth-logo" />
+      <h1 className="auth-title">Sign Up</h1>
+      <form onSubmit={handleSignup} className="auth-form">
         <input
-          name="name"
-          placeholder="Full Name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-        />
-        <input
-          name="email"
           type="email"
+          id="signup-email"
+          className="auth-input"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
           required
         />
-        <input
-          name="phone"
-          placeholder="Phone Number"
-          value={formData.phone}
-          onChange={handleChange}
-        />
-        <input
-          name="address"
-          placeholder="Address"
-          value={formData.address}
-          onChange={handleChange}
-        />
-        <div className="password-field">
+        <div className="auth-password-group">
           <input
-            name="password"
             type={showPassword ? 'text' : 'password'}
+            id="signup-password"
+            className="auth-input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
             required
           />
-          <button
-            type="button"
-            className="toggle-password"
+          <span
+            className="auth-toggle"
             onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? 'Hide' : 'Show'}
-          </button>
+          </span>
         </div>
-
-        <select name="role" value={formData.role} onChange={handleChange}>
-          <option value="buyer">Buyer</option>
-          <option value="creator">Creator</option>
-          <option value="affiliate">Affiliate</option>
-          <option value="freelancer">Freelancer</option>
-        </select>
-
-        <button type="submit" className="auth-btn">Sign Up</button>
-
-        <p className="or-separator">or</p>
-
-        <button type="button" className="google-btn" onClick={handleGoogleSignup}>
-          Sign Up with Google
-        </button>
-
-        <p className="auth-link">
+        {error && <p className="auth-error">{error}</p>}
+        <button type="submit" className="auth-button">Sign Up</button>
+        <p className="auth-switch">
           Already have an account? <a href="/login">Log in</a>
         </p>
       </form>
     </div>
-  )
+  );
 }
