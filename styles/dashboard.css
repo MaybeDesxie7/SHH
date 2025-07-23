@@ -1,0 +1,1417 @@
+/* dashboard.css */
+:root {
+  --main-bg: #111;
+  --card-bg: #1c1c1c;
+  --input-bg: #2a2a2a;
+  --main-text: #fff;
+  --muted-text: #aaa;
+  --accent: #00ff88;
+  --accent-hover: #00cc70;
+  --danger: #e74c3c;
+  --danger-hover: #c0392b;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: #121212;
+  color: #f5f5f5;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body.light-mode {
+  background-color: #ffffff;
+  color: #1a1a1a;
+}
+
+.dashboard {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 220px;
+  background-color: #1f1f1f;
+  padding: 20px;
+  transition: transform 0.3s;
+}
+
+body.light-mode .sidebar {
+  background-color: #f2f2f2;
+}
+
+.logo {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+/* Mobile-first sidebar toggle */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100%;
+  background-color: #111;
+  color: #fff;
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 999;
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+/* Show sidebar by default on larger screens */
+@media (min-width: 768px) {
+  .sidebar {
+    transform: translateX(0);
+    position: relative;
+  }
+
+  #toggleMenuBtn {
+    display: none;
+  }
+
+  .main-content {
+    margin-left: 250px;
+  }
+}
+
+/* Ensure toggle button is visible */
+#toggleMenuBtn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #fff;
+  cursor: pointer;
+}
+
+
+.sidebar nav ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar nav ul li a {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.sidebar nav ul li a i {
+  margin-right: 10px;
+}
+
+.sidebar nav ul li a:hover,
+.sidebar nav ul li a.active {
+  background-color: #333;
+}
+
+body.light-mode .sidebar nav ul li a:hover,
+body.light-mode .sidebar nav ul li a.active {
+  background-color: #ddd;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: 20px;
+}
+
+.user-info {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-info span {
+  font-weight: 600;
+}
+
+.user-info img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.user-info button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.card {
+  background: #2a2a2a;
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 255, 0, 0.2);
+}
+
+.card i {
+  font-size: 2rem;
+  color: limegreen;
+  margin-bottom: 0.8rem;
+}
+
+.card h3 {
+  margin: 0.3rem 0;
+  font-size: 1.1rem;
+}
+
+.card p {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+
+body.light-mode{
+  background: #f4f4f4;
+}
+
+
+.tools {
+  margin-top: 2rem;
+}
+
+.tool-grid {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.tool-card {
+  flex: 1 1 160px;
+  background: #2a2a2a;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+body.light-mode .tool-card {
+  background: #f2f2f2;
+}
+
+.tool-card:hover {
+  transform: scale(1.05);
+}
+
+.tool-card i {
+  font-size: 1.5rem;
+  color: limegreen;
+}
+
+canvas {
+  width: 100%;
+  max-width: 600px;
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    position: absolute;
+    height: 100%;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+  }
+
+  .sidebar.show {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+  align-items: stretch;
+}
+.quick-actions {
+  margin-top: 30px;
+  background: #1c1c1c;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.quick-actions h3 {
+  color: #fff;
+  margin-bottom: 15px;
+}
+
+.quick-links button {
+  margin: 5px;
+  background-color: #28a745;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.quick-links button i {
+  margin-right: 6px;
+}
+
+.quick-links button:hover {
+  background-color: #218838;
+}
+
+.advice-box {
+  background: #333;
+  color: #fff;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+:root {
+  --card-bg: #1f1f1f;
+  --input-bg: #2b2b2b;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --border-color: #3a3a3a;
+  --accent-color: #00ff99;
+  --accent-color-dark: #00cc77;
+}
+
+/* === Profile Page Styles === */
+.profile-section {
+  background-color: var(--card-bg);
+  padding: 2rem;
+  margin-top: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.profile-section h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+}
+
+.profile-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.profile-avatar {
+  flex: 1 1 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.profile-avatar img {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 3px solid var(--accent-color);
+  object-fit: cover;
+  margin-bottom: 0.5rem;
+}
+
+.profile-avatar input[type="file"] {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.profile-details {
+  flex: 2 1 300px;
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-details label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.profile-details input {
+  padding: 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.save-btn {
+  width: fit-content;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+.save-btn:hover {
+  background-color: var(--accent-color-dark);
+}
+
+/* === Activity Feed Styles === */
+.tools {
+  background-color: var(--card-bg);
+  padding: 2rem;
+  margin-top: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tools h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.activity-feed {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.activity-feed li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.activity-feed li i {
+  color: var(--accent-color);
+}
+/* Service Section Styling */
+.service-section {
+  background-color: var(--main-bg);
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  color: var(--main-text);
+  margin-top: 1rem;
+}
+
+.service-section h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Form Styles */
+#serviceForm {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  background-color: var(--card-bg);
+  padding: 1rem;
+  border-radius: 10px;
+}
+
+#serviceForm input,
+#serviceForm select,
+#serviceForm textarea {
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  background-color: var(--input-bg);
+  color: var(--main-text);
+}
+
+#serviceForm input:focus,
+#serviceForm textarea:focus,
+#serviceForm select:focus {
+  outline: 2px solid var(--accent);
+}
+
+/* Submit Button */
+#serviceForm button {
+  padding: 10px;
+  background-color: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+#serviceForm button:hover {
+  background-color: var(--accent-hover);
+}
+
+/* Service List Styling */
+#servicesList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.service-card {
+  background-color: var(--card-bg);
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  color: var(--main-text);
+}
+
+.service-card h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--accent);
+}
+
+.service-card p {
+  margin: 5px 0;
+  line-height: 1.5;
+}
+
+.service-card .service-meta {
+  font-size: 0.9rem;
+  color: var(--muted-text);
+  margin-bottom: 0.5rem;
+}
+
+.service-card button {
+  background-color: var(--danger);
+  border: none;
+  padding: 6px 12px;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.service-card button:hover {
+  background-color: var(--danger-hover);
+}
+
+/* Responsive Tweak */
+@media (max-width: 768px) {
+  #serviceForm {
+    grid-template-columns: 1fr;
+  }
+}
+.chat-section {
+  padding: 1rem;
+}
+
+.chat-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tab {
+  padding: 0.5rem 1rem;
+  background: #222;
+  border: none;
+  border-radius: 5px;
+  color: #eee;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: limegreen;
+  color: black;
+  font-weight: bold;
+}
+
+.chat-box {
+  display: none;
+  flex-direction: column;
+  height: 60vh;
+  border: 1px solid #333;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.chat-box.active {
+  display: flex;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  background: #111;
+}
+
+.message {
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  border-radius: 10px;
+  max-width: 80%;
+  line-height: 1.5;
+}
+
+.message.user {
+  background: limegreen;
+  align-self: flex-end;
+  color: black;
+}
+
+.message.ai {
+  background: #333;
+  color: white;
+  align-self: flex-start;
+}
+
+.chat-input {
+  display: flex;
+  padding: 1rem;
+  background: #222;
+  border-top: 1px solid #333;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 5px;
+  border: none;
+  background: #111;
+  color: #fff;
+  margin-right: 1rem;
+}
+
+.chat-input button {
+  padding: 0.75rem 1rem;
+  background: limegreen;
+  border: none;
+  color: black;
+  border-radius: 5px;
+  cursor: pointer;
+}
+/* --- Chat Layout --- */
+.chat-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.chat-controls {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.chat-controls select,
+.chat-controls input {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+}
+
+.chat-room {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #1e1e2f;
+  border-radius: 12px;
+  padding: 1rem;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0,0,0,0.15);
+}
+
+/* Chat Header */
+.chat-header {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+/* Chat Messages */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  background: #15151f;
+  padding: 1rem;
+  border-radius: 8px;
+  color: #ddd;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chat-message {
+  padding: 0.5rem 0.75rem;
+  background: #2a2a3b;
+  border-radius: 8px;
+  max-width: 70%;
+  font-size: 0.95rem;
+  word-wrap: break-word;
+}
+
+.chat-message.ai {
+  background: #233a2e;
+  color: #caffc7;
+  align-self: flex-start;
+}
+
+.chat-message.user {
+  background: #333d5d;
+  color: #e2e8f0;
+  align-self: flex-end;
+}
+
+/* Chat Input */
+.chat-input {
+  display: flex;
+  margin-top: 1rem;
+  gap: 0.5rem;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+  background: #2a2a3b;
+  color: #f1f1f1;
+}
+
+.chat-input button {
+  background: limegreen;
+  color: #fff;
+  padding: 0 1.2rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.chat-input button:hover {
+  background: #32cd32;
+}
+
+/* Dropdown and Inputs */
+select, input[type="text"] {
+  background-color: #2a2a3b;
+  color: #f1f1f1;
+  border: none;
+}
+
+/* Light Mode Override */
+body:not(.dark-mode) .chat-room {
+  background: #f4f4f4;
+}
+
+body:not(.dark-mode) .chat-messages {
+  background: #ffffff;
+  color: #333;
+}
+
+body:not(.dark-mode) .chat-message {
+  background: #e0e0e0;
+  color: #222;
+}
+
+body:not(.dark-mode) .chat-message.ai {
+  background: #d4f5d1;
+  color: #114a2b;
+}
+
+body:not(.dark-mode) .chat-message.user {
+  background: #cfdff9;
+  color: #1a1a3a;
+}
+
+body:not(.dark-mode) .chat-input input {
+  background: #eaeaea;
+  color: #111;
+}
+/* ====== Chat Room Selector Tabs ====== */
+.room-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.room-tab {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  background-color: #2a2a3b;
+  color: #eee;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.room-tab.active {
+  background-color: limegreen;
+  color: black;
+}
+
+/* ====== Private Inbox Section ====== */
+.inbox-container {
+  display: flex;
+  gap: 1rem;
+  height: 70vh;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #333;
+  background: #1e1e2f;
+}
+
+.inbox-users {
+  width: 30%;
+  background: #15151f;
+  overflow-y: auto;
+  padding: 0.5rem;
+  border-right: 1px solid #333;
+}
+
+.inbox-user {
+  padding: 0.75rem;
+  border-radius: 6px;
+  background: #2a2a3b;
+  color: #eee;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  transition: background 0.2s;
+}
+
+.inbox-user:hover,
+.inbox-user.active {
+  background: limegreen;
+  color: black;
+}
+
+/* Chat Area */
+.inbox-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.inbox-chat .chat-messages {
+  background: #15151f;
+  color: #ddd;
+}
+
+.inbox-chat .chat-input input {
+  background: #2a2a3b;
+  color: #fff;
+}
+
+.inbox-chat .chat-input button {
+  background: limegreen;
+  color: black;
+}
+
+/* Light Mode Overrides */
+body:not(.dark-mode) .inbox-container {
+  background: #f9f9f9;
+}
+
+body:not(.dark-mode) .inbox-users {
+  background: #f0f0f0;
+  border-right: 1px solid #ccc;
+}
+
+body:not(.dark-mode) .inbox-user {
+  background: #eaeaea;
+  color: #222;
+}
+
+body:not(.dark-mode) .inbox-user.active {
+  background: #b6ffb3;
+  color: #111;
+}
+.unread-badge {
+  background: red;
+  color: white;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  margin-left: 8px;
+  font-weight: bold;
+}
+
+.chat-message.ai.typing {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* Tool Cards Styles */
+.tool-filter {
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.tool-filter select {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: none;
+}
+
+#toolsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.tool-card {
+  background: #1f1f1f;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.tool-card:hover {
+  transform: translateY(-5px);
+}
+
+.tool-card h3 {
+  margin-top: 0;
+  color: #00ff99;
+}
+
+.tool-card p {
+  color: #ccc;
+}
+
+.visit-btn {
+  display: inline-block;
+  margin-top: 1rem;
+  background-color: #00ff99;
+  color: #000;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  text-decoration: none;
+  transition: background 0.3s ease;
+}
+
+.visit-btn:hover {
+  background-color: #00cc77;
+}
+/* === Ebook Page Specific === */
+.ebook-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 1rem;
+  background: #1f1f1f;
+  border-bottom: 1px solid #333;
+}
+
+.ebook-filter label {
+  color: #ccc;
+}
+
+.ebook-filter select {
+  padding: 8px;
+  background: #2a2a2a;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 5px;
+}
+
+.ebooks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.ebook-card {
+  background: #262626;
+  color: #fff;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ebook-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: #00ff99;
+}
+
+.ebook-card p {
+  flex: 1;
+  color: #aaa;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.ebook-card .ebook-tags {
+  margin-bottom: 0.8rem;
+}
+
+.ebook-card .ebook-tag {
+  display: inline-block;
+  background: #00ff9966;
+  color: #00ffcc;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  border-radius: 15px;
+  margin-right: 6px;
+  margin-bottom: 6px;
+}
+
+.ebook-card a {
+  text-decoration: none;
+  background: #00ff99;
+  color: #000;
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-align: center;
+  transition: 0.2s;
+}
+
+.ebook-card a:hover {
+  background: #00cc77;
+  color: #fff;
+}
+/* ===== Ebooks Page Styles ===== */
+.ebook-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background-color: #1f1f1f;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.ebook-controls select,
+.ebook-controls button {
+  padding: 8px 12px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: none;
+  background-color: #333;
+  color: #fff;
+  cursor: pointer;
+}
+
+.ebook-controls button:hover {
+  background-color: #444;
+}
+
+.ebooks-container {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.ebook-card {
+  background-color: #2a2a2a;
+  padding: 1rem;
+  border-radius: 12px;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease;
+}
+
+.ebook-card:hover {
+  transform: scale(1.02);
+}
+
+.ebook-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.ebook-card p {
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.ebook-card .tags {
+  font-size: 0.8rem;
+  color: lime;
+  margin-bottom: 0.5rem;
+}
+
+.ebook-card .rating {
+  display: inline-block;
+  background-color: #444;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  margin-right: 5px;
+  color: gold;
+}
+
+.ebook-card .popularity {
+  display: inline-block;
+  background-color: #555;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  color: #00d9ff;
+}
+
+.ebook-card .buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 0.8rem;
+}
+
+.ebook-card .buttons a {
+  text-decoration: none;
+  padding: 8px 12px;
+  background-color: limegreen;
+  color: #000;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.ebook-card .buttons a.download {
+  background-color: #555;
+  color: #fff;
+}
+
+.ebook-card .buttons a:hover {
+  opacity: 0.85;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 1rem 0;
+}
+
+.pagination button {
+  background-color: #333;
+  color: #fff;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.pagination button.active {
+  background-color: limegreen;
+  color: black;
+}
+
+.pagination button:hover {
+  background-color: #444;
+}
+/* Tutorials Grid */
+.tutorials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  padding: 20px 0;
+}
+
+/* Individual Tutorial Card */
+.tutorial-card {
+  background: #1f1f1f;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: transform 0.2s;
+}
+
+.tutorial-card:hover {
+  transform: translateY(-5px);
+}
+
+.tutorial-card iframe {
+  width: 100%;
+  height: 200px;
+  border: none;
+  border-radius: 10px;
+}
+
+.tutorial-card h3 {
+  margin: 10px 0 5px;
+  color: #ffffff;
+  font-size: 18px;
+}
+
+.tutorial-card p {
+  color: #ccc;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.tutorial-card .tutorial-tags {
+  margin-bottom: 10px;
+}
+
+.tutorial-tag {
+  display: inline-block;
+  background: limegreen;
+  color: #000;
+  padding: 4px 8px;
+  margin-right: 6px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.tutorial-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  background: #2a2a2a;
+  border-radius: 8px;
+}
+/* Offers Section */
+.offers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.offer-card {
+  background: #1e1e1e;
+  border-radius: 12px;
+  padding: 20px;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  position: relative;
+  transition: transform 0.3s;
+}
+
+.offer-card:hover {
+  transform: translateY(-4px);
+}
+
+.offer-card h3 {
+  margin-bottom: 8px;
+  color: limegreen;
+  font-size: 20px;
+}
+
+.offer-card p {
+  font-size: 14px;
+  color: #ccc;
+  margin-bottom: 10px;
+}
+
+.countdown {
+  font-size: 14px;
+  font-weight: bold;
+  color: orange;
+  margin-bottom: 10px;
+}
+
+.redeem-btn {
+  display: inline-block;
+  background: limegreen;
+  color: #000;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+
+.redeem-btn:hover {
+  background: #b8ff66;
+}
+/* Settings Section */
+.settings-section {
+  padding: 20px;
+  max-width: 600px;
+}
+
+.setting-item {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-item label {
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #ccc;
+}
+
+.setting-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: limegreen;
+}
+
+.setting-item select,
+.setting-item input[type="password"] {
+  padding: 10px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  color: #fff;
+}
+
+.save-btn {
+  background-color: limegreen;
+  color: black;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-top: 10px;
+  cursor: pointer;
+  border: none;
+}
+
+.delete-btn {
+  background-color: #ff4d4d;
+  color: white;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-top: 20px;
+  cursor: pointer;
+  border: none;
+}
+
+.delete-btn:hover {
+  background-color: #ff1a1a;
+}
+.help-center {
+  padding: 40px;
+  max-width: 900px;
+  margin: auto;
+  font-family: 'Segoe UI', sans-serif;
+  color: #333;
+}
+
+.help-title {
+  font-size: 36px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.help-sub {
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 30px;
+  color: #666;
+}
+
+.help-section {
+  margin-bottom: 30px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.help-category {
+  font-size: 22px;
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.help-item {
+  margin-bottom: 10px;
+}
+
+.help-question {
+  background: none;
+  border: none;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  color: #0070f3;
+  text-align: left;
+  width: 100%;
+}
+
+.help-answer {
+  margin-top: 5px;
+  padding-left: 15px;
+  color: #444;
+}
+.help-content {
+  padding: 1.5rem;
+}
+
+.faq-item {
+  border-bottom: 1px solid #ccc;
+  padding: 1rem 0;
+}
+
+.faq-question {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+
+.faq-answer {
+  margin-top: 0.5rem;
+  color: #444;
+  line-height: 1.6;
+}

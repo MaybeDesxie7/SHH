@@ -1,41 +1,83 @@
 'use client'
-import { useRouter } from 'next/navigation'
+
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
+import '@/styles/style.css'; 
+
 
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleLogin = async (e) => {
     e.preventDefault()
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    setError(null)
 
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       setError(error.message)
     } else {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('user_id', data.user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        router.push('/dashboard/admin/overview')
-      } else {
-        router.push('/dashboard')
-      }
+      router.push('/dashboard')
     }
   }
 
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${location.origin}/dashboard` },
+    })
+    if (error) setError(error.message)
+  }
+
   return (
-    <form onSubmit={handleLogin}>
-      <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
-      <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-      <button type="submit">Login</button>
-      {error && <p style={{color:'red'}}>{error}</p>}
-    </form>
+    <div className="auth-container">
+      <form className="auth-form" onSubmit={handleLogin}>
+        <img src="/logo.png" alt="Logo" className="auth-logo" />
+        <h2>Login to Smart Hustle Hub</h2>
+
+        {error && <p className="auth-error">{error}</p>}
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          required
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <div className="password-field">
+          <input
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Password"
+            value={password}
+            required
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button
+            type="button"
+            className="toggle-password"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </button>
+        </div>
+
+        <button type="submit" className="auth-btn">Login</button>
+
+        <p className="or-separator">or</p>
+
+        <button type="button" className="google-btn" onClick={handleGoogleLogin}>
+          Sign in with Google
+        </button>
+
+        <p className="auth-link">
+          Don't have an account? <a href="/signup">Sign up here</a>
+        </p>
+      </form>
+    </div>
   )
 }

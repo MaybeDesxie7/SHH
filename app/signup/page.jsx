@@ -1,48 +1,131 @@
 'use client'
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import Image from 'next/image'
+import '@/styles/style.css'; 
+
 
 export default function SignupPage() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone: '',
+    address: '',
+    role: 'buyer',
+  })
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState(null)
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
-  const [error, setError] = useState('')
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFormData({ ...formData, [name]: value })
+  }
 
   const handleSignup = async (e) => {
     e.preventDefault()
     const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password
+      email: formData.email,
+      password: formData.password,
     })
 
-    if (signUpError) {
-      setError(signUpError.message)
-    } else {
-      const { error: profileError } = await supabase.from('profiles').insert({
-        name,
-        email,
-        user_id: data.user.id,
-        avatar: 'default.png',
-        role: 'buyer'
-      })
+    if (signUpError) return setError(signUpError.message)
 
-      if (profileError) {
-        setError(profileError.message)
-      } else {
-        router.push('/dashboard')
-      }
-    }
+    const user = data.user
+    const { error: profileError } = await supabase.from('profiles').insert({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      address: formData.address,
+      role: formData.role,
+      avatar: '',
+      user_id: user.id,
+    })
+
+    if (profileError) return setError(profileError.message)
+
+    router.push('/dashboard')
+  }
+
+  const handleGoogleSignup = async () => {
+    await supabase.auth.signInWithOAuth({ provider: 'google' })
   }
 
   return (
-    <form onSubmit={handleSignup}>
-      <input type="text" placeholder="Name" value={name} onChange={e => setName(e.target.value)} required />
-      <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
-      <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-      <button type="submit">Signup</button>
-      {error && <p style={{color:'red'}}>{error}</p>}
-    </form>
+    <div className="auth-container">
+      <form className="auth-form" onSubmit={handleSignup}>
+        <img src="/logo.png" alt="Logo" className="auth-logo" />
+        <h2>Create Your Account</h2>
+
+        {error && <p className="auth-error">{error}</p>}
+
+        <input
+          name="name"
+          placeholder="Full Name"
+          value={formData.name}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="email"
+          type="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="phone"
+          placeholder="Phone Number"
+          value={formData.phone}
+          onChange={handleChange}
+        />
+        <input
+          name="address"
+          placeholder="Address"
+          value={formData.address}
+          onChange={handleChange}
+        />
+        <div className="password-field">
+          <input
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+          <button
+            type="button"
+            className="toggle-password"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </button>
+        </div>
+
+        <select name="role" value={formData.role} onChange={handleChange}>
+          <option value="buyer">Buyer</option>
+          <option value="creator">Creator</option>
+          <option value="affiliate">Affiliate</option>
+          <option value="freelancer">Freelancer</option>
+        </select>
+
+        <button type="submit" className="auth-btn">Sign Up</button>
+
+        <p className="or-separator">or</p>
+
+        <button type="button" className="google-btn" onClick={handleGoogleSignup}>
+          Sign Up with Google
+        </button>
+
+        <p className="auth-link">
+          Already have an account? <a href="/login">Log in</a>
+        </p>
+      </form>
+    </div>
   )
 }

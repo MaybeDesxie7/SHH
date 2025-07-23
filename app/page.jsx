@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+import '@/styles/style.css'; 
 
 export default function HomePage() {
   const [navVisible, setNavVisible] = useState(false);
