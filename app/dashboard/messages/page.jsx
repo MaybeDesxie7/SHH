@@ -20,6 +20,7 @@ export default function MessagesPage() {
   const [receiver, setReceiver] = useState('');
   const [allUsers, setAllUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -131,13 +132,13 @@ export default function MessagesPage() {
 
   return (
     <div className="dashboard">
-      <aside className="sidebar" id="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} id="sidebar">
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
             <li><a href="/dashboard"><i className="fas fa-home"></i> Dashboard</a></li>
             <li><a href="/dashboard/profile"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/services"><i className="fas fa-briefcase"></i> My Services</a></li>
+            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i>Hustle Street</a></li>
             <li><a href="/dashboard/messages" className="active"><i className="fas fa-envelope"></i> Messages</a></li>
             <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
             <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
@@ -165,6 +166,8 @@ export default function MessagesPage() {
           <div className="user-info">
             <span>Messages</span>
             <img src="https://i.pravatar.cc/100" alt="User Profile" />
+            <button id="toggleModeBtn" title="Toggle Light/Dark Mode"><i className="fas fa-adjust"></i></button>
+            <button id="toggleMenuBtn" title="Toggle Menu" onClick={() => setSidebarOpen(prev => !prev)}><i className="fas fa-bars"></i></button>
           </div>
         </header>
 

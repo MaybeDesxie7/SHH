@@ -11,6 +11,7 @@ export default function ToolsPage() {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const toolsPerPage = 10;
 
   useEffect(() => {
@@ -49,13 +50,13 @@ export default function ToolsPage() {
 
   return (
     <div className="dashboard">
-      <aside className="sidebar" id="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} id="sidebar">
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
             <li><a href="/dashboard"><i className="fas fa-home"></i> Dashboard</a></li>
             <li><a href="/dashboard/profile"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/services"><i className="fas fa-briefcase"></i> My Services</a></li>
+            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i>Hustle Street</a></li>
             <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
             <li><a href="/dashboard/tools" className="active"><i className="fas fa-toolbox"></i> Tools</a></li>
             <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
@@ -83,6 +84,12 @@ export default function ToolsPage() {
           <div className="user-info">
             <span>Tools</span>
             <img src="https://i.pravatar.cc/100" alt="User Profile" />
+            <button id="toggleModeBtn" title="Toggle Light/Dark Mode">
+              <i className="fas fa-adjust"></i>
+            </button>
+            <button id="toggleMenuBtn" title="Toggle Menu" onClick={() => setSidebarOpen(prev => !prev)}>
+              <i className="fas fa-bars"></i>
+            </button>
           </div>
         </header>
 

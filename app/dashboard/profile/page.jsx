@@ -10,6 +10,7 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState('https://i.pravatar.cc/150?img=3');
   const avatarInputRef = useRef(null);
   const router = useRouter();
+  const [sidebarOpen, setSidebarOpen] = useState(true); // ✅ added
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -116,13 +117,13 @@ export default function ProfilePage() {
   return (
     <div className="dashboard">
       {/* Sidebar */}
-      <aside className="sidebar" id="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} id="sidebar">
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
             <li><a href="/dashboard"><i className="fas fa-home"></i> Dashboard</a></li>
             <li><a href="/dashboard/profile" className="active"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/services"><i className="fas fa-briefcase"></i> My Services</a></li>
+            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i>Hustle Street</a></li>
             <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
             <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
             <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
@@ -152,7 +153,7 @@ export default function ProfilePage() {
             <span>Manage your profile, {profile.name || profile.email}</span>
             <img src={avatarUrl} alt="User Avatar" />
             <button id="toggleModeBtn" title="Toggle Light/Dark Mode"><i className="fas fa-adjust"></i></button>
-            <button id="toggleMenuBtn" title="Toggle Menu"><i className="fas fa-bars"></i></button>
+            <button id="toggleMenuBtn" title="Toggle Menu" onClick={() => setSidebarOpen(!sidebarOpen)}><i className="fas fa-bars"></i></button>
           </div>
         </header>
 

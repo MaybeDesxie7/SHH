@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [darkMode, setDarkMode] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // sidebar toggle state
 
   useEffect(() => {
     document.body.classList.toggle("dark-mode", darkMode);
@@ -44,21 +45,28 @@ export default function SettingsPage() {
 
   return (
     <div className="dashboard">
-      <aside className="sidebar" id="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} id="sidebar">
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
-            <li><Link href="/dashboard"><i className="fas fa-home"></i> Dashboard</Link></li>
-            <li><Link href="/dashboard/profile"><i className="fas fa-user"></i> Profile</Link></li>
-            <li><Link href="/dashboard/services"><i className="fas fa-briefcase"></i> My Services</Link></li>
-            <li><Link href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</Link></li>
-            <li><Link href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</Link></li>
-            <li><Link href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</Link></li>
-            <li><Link href="/dashboard/tutorials"><i className="fas fa-video"></i> Tutorials</Link></li>
-            <li><Link href="/dashboard/offers"><i className="fas fa-tags"></i> Offers</Link></li>
-            <li><Link href="/dashboard/settings" className="active"><i className="fas fa-cog"></i> Settings</Link></li>
+            <li><a href="/dashboard"><i className="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/dashboard/profile"><i className="fas fa-user"></i> Profile</a></li>
+            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i>Hustle Street</a></li>
+            <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
+            <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
+            <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
+            <li><a href="/dashboard/tutorials"><i className="fas fa-video"></i> Tutorials</a></li>
+            <li><a href="/dashboard/offers"><i className="fas fa-tags"></i> Offers</a></li>
             <li><a href="/dashboard/help_center"><i className="fas fa-question-circle"></i> Help Center</a></li>
-            <li><button onClick={handleLogout} style={{ color: '#ff4d4d', border: 'none', background: 'none' }}><i className="fas fa-sign-out-alt"></i> Logout</button></li>
+            <li><a href="/dashboard/settings" className="active"><i className="fas fa-cog"></i> Settings</a></li>
+            <li>
+              <button
+                onClick={handleLogout}
+                style={{ background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 16px' }}
+              >
+                <i className="fas fa-sign-out-alt"></i> Logout
+              </button>
+            </li>
           </ul>
         </nav>
       </aside>
@@ -69,6 +77,9 @@ export default function SettingsPage() {
             <span>Settings</span>
             <img src="https://i.pravatar.cc/100" alt="User Profile" />
             <button onClick={() => setDarkMode(!darkMode)}><i className="fas fa-adjust"></i></button>
+            <button id="toggleMenuBtn" onClick={() => setSidebarOpen(prev => !prev)}>
+              <i className="fas fa-bars" />
+            </button>
           </div>
         </header>
 
