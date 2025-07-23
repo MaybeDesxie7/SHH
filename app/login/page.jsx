@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import '@/styles/style.css'; 
-
+import '@/styles/style.css'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -23,14 +22,6 @@ export default function LoginPage() {
     } else {
       router.push('/dashboard')
     }
-  }
-
-  const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${location.origin}/dashboard` },
-    })
-    if (error) setError(error.message)
   }
 
   const handleGoogleLogin = async () => {
