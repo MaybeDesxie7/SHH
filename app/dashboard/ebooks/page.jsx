@@ -11,11 +11,17 @@ export default function EbooksPage() {
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('default');
   const [currentPage, setCurrentPage] = useState(1);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const itemsPerPage = 4;
 
   const toggleSidebar = () => {
-    setSidebarOpen(prev => !prev);
+    setSidebarOpen((prev) => !prev);
+  };
+
+  const handleNavClick = () => {
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
   };
 
   useEffect(() => {
@@ -58,20 +64,20 @@ export default function EbooksPage() {
 
   return (
     <div className="dashboard">
-      <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} id="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} id="sidebar">
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
-            <li><a href="/dashboard"><i className="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="/dashboard/profile"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i>Hustle Street</a></li>
-            <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
-            <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
-            <li><a href="/dashboard/ebooks" className="active"><i className="fas fa-book"></i> Ebooks</a></li>
-            <li><a href="/dashboard/tutorials"><i className="fas fa-video"></i> Tutorials</a></li>
-            <li><a href="/dashboard/offers"><i className="fas fa-tags"></i> Offers</a></li>
-            <li><a href="/dashboard/help_center"><i className="fas fa-question-circle"></i> Help Center</a></li>
-            <li><a href="/dashboard/settings"><i className="fas fa-cog"></i> Settings</a></li>
+            <li><a href="/dashboard" onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/dashboard/profile" onClick={handleNavClick}><i className="fas fa-user"></i> Profile</a></li>
+            <li><a href="/dashboard/hustlestreet" onClick={handleNavClick}><i className="fas fa-briefcase"></i> Hustle Street</a></li>
+            <li><a href="/dashboard/messages" onClick={handleNavClick}><i className="fas fa-envelope"></i> Messages</a></li>
+            <li><a href="/dashboard/tools" onClick={handleNavClick}><i className="fas fa-toolbox"></i> Tools</a></li>
+            <li><a href="/dashboard/ebooks" className="active" onClick={handleNavClick}><i className="fas fa-book"></i> Ebooks</a></li>
+            <li><a href="/dashboard/tutorials" onClick={handleNavClick}><i className="fas fa-video"></i> Tutorials</a></li>
+            <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
+            <li><a href="/dashboard/help_center" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
+            <li><a href="/dashboard/settings" onClick={handleNavClick}><i className="fas fa-cog"></i> Settings</a></li>
             <li>
               <button
                 onClick={async () => {

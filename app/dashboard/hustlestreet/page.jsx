@@ -10,32 +10,53 @@ export default function HustleStreetPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [offers, setOffers] = useState([]);
-  const [form, setForm] = useState({ title: '', description: '', type: '' });
+  const [form, setForm] = useState({ title: '', description: '', type: '', stars_used: 0 });
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
-
-  // New state for sidebar open/close
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [expandedCard, setExpandedCard] = useState(null);
+  const [topUsers, setTopUsers] = useState([]);
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) return router.push('/login');
-      setUser(data.user);
+    const checkScreenSize = () => {
+      const isWide = window.innerWidth >= 768;
+      setIsDesktop(isWide);
+      setSidebarOpen(isWide);
     };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  useEffect(() => {
+    async function getUser() {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        router.push('/login');
+        return;
+      }
+      setUser(data.user);
+      setLoading(false);
+    }
     getUser();
   }, [router]);
 
   useEffect(() => {
-    if (user) fetchOffers();
+    if (user) {
+      fetchOffers();
+      fetchTopUsers();
+    }
   }, [user]);
 
-  const fetchOffers = async () => {
+  async function fetchOffers() {
     const { data, error } = await supabase
       .from('hustle_offers')
       .select('*')
+      .order('stars_used', { ascending: false })
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -44,103 +65,117 @@ export default function HustleStreetPage() {
     } else {
       setOffers(data);
     }
-  };
+  }
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  async function fetchTopUsers() {
+    const { data, error } = await supabase.rpc('get_top_users');
+    if (error) {
+      console.error('Failed to fetch top users', error);
+      toast.error('Error loading top users');
+    } else {
+      setTopUsers(data);
+    }
+  }
 
-  const handleSubmit = async (e) => {
+  function handleChange(e) {
+    const { name, value } = e.target;
+    if (name === 'stars_used') {
+      const val = parseInt(value, 10);
+      if (isNaN(val) || val < 0) return;
+      setForm(f => ({ ...f, [name]: val }));
+    } else {
+      setForm(f => ({ ...f, [name]: value }));
+    }
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.title || !form.description || !form.type) return toast.error('Please fill all fields');
+    if (!form.title || !form.description || !form.type) {
+      return toast.error('Please fill all fields');
+    }
+    if (typeof form.stars_used !== 'number' || form.stars_used < 0) {
+      return toast.error('Stars used must be ≥ 0');
+    }
 
-    const { error } = await supabase.from('hustle_offers').insert({ ...form, user_id: user.id });
+    const { error } = await supabase.from('hustle_offers').insert({
+      ...form,
+      user_id: user.id
+    });
+
     if (error) {
       toast.error('Error posting offer');
       console.error(error);
     } else {
       toast.success('Offer posted!');
-      setForm({ title: '', description: '', type: '' });
+      setForm({ title: '', description: '', type: '', stars_used: 0 });
       fetchOffers();
+      setExpandedCard(null);
     }
-  };
+  }
 
-  const filteredOffers = offers.filter((o) => {
+  const filteredOffers = offers.filter(o => {
     const matchesFilter = filter === 'all' || o.type === filter;
-    const matchesSearch =
-      o.title.toLowerCase().includes(search.toLowerCase()) ||
-      o.description.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
+    const searchText = search.toLowerCase();
+    return matchesFilter &&
+      (o.title.toLowerCase().includes(searchText) ||
+      o.description.toLowerCase().includes(searchText));
   });
 
-  const myOffers = filteredOffers.filter((o) => o.user_id === user?.id);
-  const streetOffers = filteredOffers.filter((o) => o.user_id !== user?.id);
+  const myOffers = filteredOffers.filter(o => o.user_id === user.id);
+  const streetOffers = filteredOffers.filter(o => o.user_id !== user.id);
 
-  const openJoinModal = (offer) => {
+  function openJoinModal(offer) {
     setSelectedOffer(offer);
     setShowModal(true);
-  };
+  }
 
-  const closeModal = () => {
+  function closeModal() {
     setShowModal(false);
     setSelectedOffer(null);
-  };
+  }
 
-  if (!user) return <p>Loading...</p>;
+  function toggleCard(key) {
+    setExpandedCard(prev => prev === key ? null : key);
+  }
+
+  if (loading) return <p>Loading...</p>;
+
+// Utility function to toggle sidebar
+function toggleSidebar() {
+  setSidebarOpen(prev => !prev);
+}
+
+// Auto-close sidebar on dashboard click (on mobile)
+function handleDashboardClick() {
+  if (!isDesktop) setSidebarOpen(false);
+}
+
+
 
   return (
     <div className="dashboard">
-      {/* Sidebar with toggle classes */}
+      {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} id="sidebar">
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
-            <li>
-              <a href="/dashboard"><i className="fas fa-home"></i> Dashboard</a>
-            </li>
-            <li>
-              <a href="/dashboard/profile"><i className="fas fa-user"></i> Profile</a>
-            </li>
-            <li>
-              <a href="/dashboard/hustlestreet" className="active"><i className="fas fa-briefcase"></i> Hustle Street</a>
-            </li>
-            <li>
-              <a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a>
-            </li>
-            <li>
-              <a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a>
-            </li>
-            <li>
-              <a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a>
-            </li>
-            <li>
-              <a href="/dashboard/tutorials"><i className="fas fa-video"></i> Tutorials</a>
-            </li>
-            <li>
-              <a href="/dashboard/offers"><i className="fas fa-tags"></i> Offers</a>
-            </li>
-            <li>
-              <a href="/dashboard/help_center"><i className="fas fa-question-circle"></i> Help Center</a>
-            </li>
-            <li>
-              <a href="/dashboard/settings"><i className="fas fa-cog"></i> Settings</a>
-            </li>
+            <li><a href="/dashboard" onClick={handleDashboardClick}><i className="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/dashboard/profile" className="active"><i className="fas fa-user"></i> Profile</a></li>
+            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i>Hustle Street</a></li>
+            <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
+            <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
+            <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
+            <li><a href="/dashboard/tutorials"><i className="fas fa-video"></i> Tutorials</a></li>
+            <li><a href="/dashboard/offers"><i className="fas fa-tags"></i> Offers</a></li>
+            <li><a href="/dashboard/help_center"><i className="fas fa-question-circle"></i> Help Center</a></li>
+            <li><a href="/dashboard/settings"><i className="fas fa-cog"></i> Settings</a></li>
             <li>
               <button
                 onClick={async () => {
                   await supabase.auth.signOut();
                   router.push('/login');
                 }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#ff4d4d',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '8px 16px',
-                }}
+                style={{ background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 16px' }}
               >
                 <i className="fas fa-sign-out-alt"></i> Logout
               </button>
@@ -149,96 +184,141 @@ export default function HustleStreetPage() {
         </nav>
       </aside>
 
+
       <main className="main-content">
         <header>
           <div className="user-info">
-            <span>Hustle Street</span>
-            <img src="https://i.pravatar.cc/100" alt="User" />
-            {/* Sidebar toggle buttons */}
-            <button
-              id="toggleModeBtn"
-              title="Toggle Light/Dark Mode"
-              style={{ marginLeft: 'auto', marginRight: '10px' }}
-            >
-              <i className="fas fa-adjust"></i>
-            </button>
-            <button
-              id="toggleMenuBtn"
-              title="Toggle Menu"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              <i className="fas fa-bars"></i>
+            <span>Help Center</span>
+            <img src="https://i.pravatar.cc/100" alt="User Profile" />
+            <button id="toggleModeBtn"><i className="fas fa-adjust" /></button>
+            <button id="toggleMenuBtn" onClick={toggleSidebar}>
+              <i className="fas fa-bars" />
             </button>
           </div>
         </header>
 
-        <section className="hustle-form">
-          <h2>Post a Hustle Offer</h2>
-          <form onSubmit={handleSubmit}>
-            <input name="title" value={form.title} onChange={handleChange} placeholder="Offer title" required />
-            <textarea name="description" value={form.description} onChange={handleChange} placeholder="Description" required />
-            <select name="type" value={form.type} onChange={handleChange} required>
-              <option value="">Select Type</option>
-              <option value="cross-promotion">Cross-Promotion</option>
-              <option value="partnership">Partnership</option>
-              <option value="collab">Collaboration</option>
-            </select>
-            <button type="submit">Post Offer</button>
-          </form>
-        </section>
+        <section className="shh-feature-cards">
+          {[
+            { name: 'My Offers', key: 'my' },
+            { name: 'Trending Offers', key: 'trending' },
+            { name: 'Top Users', key: 'top' },
+            { name: 'Post New Offer', key: 'form' },
+            { name: 'Street Offers', key: 'street' },
+          ].map(card => (
+            <motion.div key={card.key} className="shh-collapsible-card">
+              <div
+                className="shh-card-header"
+                onClick={() => toggleCard(card.key)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && toggleCard(card.key)}
+              >
+                <h3>{card.name}</h3>
+                <i className={`fas fa-chevron-${expandedCard === card.key ? 'up' : 'down'}`} />
+              </div>
 
-        <section className="filter-bar">
-          <input type="text" placeholder="Search offers..." value={search} onChange={(e) => setSearch(e.target.value)} />
-          <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="all">All Types</option>
-            <option value="cross-promotion">Cross-Promotion</option>
-            <option value="partnership">Partnership</option>
-            <option value="collab">Collab</option>
-          </select>
-        </section>
+              <AnimatePresence>
+                {expandedCard === card.key && (
+                  <motion.div
+                    className="shh-card-content"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {/* === TOP USERS CARD CONTENT === */}
+                    {card.key === 'top' && (
+                      topUsers.length === 0
+                        ? <p>No top users yet.</p>
+                        : (
+                          <ul className="top-users-list">
+                            {topUsers.map((u) => (
+                              <li key={u.user_id} className="user-card">
+                                {u.avatar ? (
+                                  <img src={u.avatar} alt={u.name} className="user-avatar" />
+                                ) : (
+                                  <div className="shh-avatar-fallback">{u.name?.[0]?.toUpperCase()}</div>
+                                )}
+                                <div className="user-details">
+                                  <p className="user-name">{u.name}</p>
+                                  <p><strong>⭐ Stars:</strong> {u.total_stars}</p>
+                                  <p><strong>🎯 Offers:</strong> {u.total_offers}</p>
+                                  <a href="/dashboard/messages" className="message-btn">Message</a>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )
+                    )}
 
-        <section className="my-offers">
-          <h3>My Offers</h3>
-          <div className="card-grid">
-            {myOffers.map((offer) => (
-              <motion.div key={offer.id} className="offer-card" layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <h4>{offer.title}</h4>
-                <p><strong>Type:</strong> {offer.type}</p>
-                <p>{offer.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </section>
+                    {card.key === 'form' && (
+                      <form onSubmit={handleSubmit} className="shh-offer-form">
+                        <input type="text" name="title" placeholder="Title" value={form.title} onChange={handleChange} />
+                        <textarea name="description" placeholder="Description" value={form.description} onChange={handleChange} />
+                        <input type="text" name="type" placeholder="Type" value={form.type} onChange={handleChange} />
+                        <input type="number" name="stars_used" placeholder="Stars used" value={form.stars_used} onChange={handleChange} />
+                        <button type="submit">Post Offer</button>
+                      </form>
+                    )}
 
-        <section className="street-offers">
-          <h3>Street Offers</h3>
-          <div className="card-grid">
-            {streetOffers.map((offer) => (
-              <motion.div key={offer.id} className="offer-card" layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <h4>{offer.title}</h4>
-                <p><strong>Type:</strong> {offer.type}</p>
-                <p>{offer.description}</p>
-                <div className="offer-actions">
-                  <button onClick={() => openJoinModal(offer)}>Join Offer</button>
-                  <a href="/dashboard/messages" className="message-btn">Message</a>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
+                    {card.key === 'my' && (
+                      myOffers.length === 0
+                        ? <p>No offers yet.</p>
+                        : <ul className="shh-offer-list">
+                            {myOffers.map(o => (
+                              <li key={o.id} className="shh-offer-card">
+                                <h4>{o.title}</h4>
+                                <p>{o.description}</p>
+                                <span>⭐ {o.stars_used}</span>
+                              </li>
+                            ))}
+                          </ul>
+                    )}
 
-        <AnimatePresence>
-          {showModal && (
-            <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <motion.div className="modal" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }}>
-                <h3>Join Offer: {selectedOffer?.title}</h3>
-                <p>{selectedOffer?.description}</p>
-                <button onClick={() => { toast.success('Request sent!'); closeModal(); }}>Send Join Request</button>
-                <button onClick={closeModal} className="cancel">Cancel</button>
-              </motion.div>
+                    {card.key === 'street' && (
+                      streetOffers.length === 0
+                        ? <p>No community offers yet.</p>
+                        : <ul className="shh-offer-list">
+                            {streetOffers.map(o => (
+                              <li key={o.id} className="shh-offer-card">
+                                <h4>{o.title}</h4>
+                                <p>{o.description}</p>
+                                <button onClick={() => openJoinModal(o)}>Join</button>
+                              </li>
+                            ))}
+                          </ul>
+                    )}
+
+                    {card.key === 'trending' && (
+                      <ul className="shh-offer-list">
+                        {filteredOffers
+                          .filter(o => o.stars_used > 0)
+                          .slice(0, 5)
+                          .map(o => (
+                            <li key={o.id} className="shh-offer-card">
+                              <h4>{o.title}</h4>
+                              <p>{o.description}</p>
+                              <span>🔥 {o.stars_used} Stars</span>
+                            </li>
+                          ))}
+                      </ul>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
-          )}
-        </AnimatePresence>
+          ))}
+        </section>
+
+        {showModal && selectedOffer && (
+          <div className="shh-modal">
+            <div className="shh-modal-content">
+              <h3>Join Offer: {selectedOffer.title}</h3>
+              <p>{selectedOffer.description}</p>
+              <button onClick={closeModal}>Close</button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -13,7 +12,22 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [darkMode, setDarkMode] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true); // sidebar toggle state
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const updateMedia = () => {
+      setIsDesktop(window.innerWidth >= 769);
+    };
+    updateMedia();
+    window.addEventListener('resize', updateMedia);
+    return () => window.removeEventListener('resize', updateMedia);
+  }, []);
+
+  useEffect(() => {
+    setSidebarOpen(isDesktop);
+  }, [isDesktop]);
 
   useEffect(() => {
     document.body.classList.toggle("dark-mode", darkMode);
@@ -43,15 +57,19 @@ export default function SettingsPage() {
     }
   };
 
+  const handleDashboardClick = () => {
+    if (!isDesktop) setSidebarOpen(false);
+  };
+
   return (
     <div className="dashboard">
       <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} id="sidebar">
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
-            <li><a href="/dashboard"><i className="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/dashboard" onClick={handleDashboardClick}><i className="fas fa-home"></i> Dashboard</a></li>
             <li><a href="/dashboard/profile"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i>Hustle Street</a></li>
+            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i> Hustle Street</a></li>
             <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
             <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
             <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
@@ -106,7 +124,6 @@ export default function SettingsPage() {
           </div>
 
           <h2>Change Password</h2>
-
           <div className="setting-item">
             <input
               type="password"

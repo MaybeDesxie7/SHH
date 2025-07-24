@@ -20,7 +20,29 @@ export default function MessagesPage() {
   const [receiver, setReceiver] = useState('');
   const [allUsers, setAllUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // start hidden on mobile
+
+  // Detect screen width to force sidebar open on desktop
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    // Update isDesktop on resize
+    const updateMedia = () => {
+      setIsDesktop(window.innerWidth >= 769);
+    };
+    updateMedia();
+    window.addEventListener('resize', updateMedia);
+    return () => window.removeEventListener('resize', updateMedia);
+  }, []);
+
+  // Force sidebar open on desktop
+  useEffect(() => {
+    if (isDesktop) {
+      setSidebarOpen(true);
+    } else {
+      setSidebarOpen(false);
+    }
+  }, [isDesktop]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -128,6 +150,13 @@ export default function MessagesPage() {
     setPrivateInput('');
   };
 
+  // Close sidebar on Dashboard link click if mobile
+  const handleDashboardClick = (e) => {
+    if (!isDesktop) {
+      setSidebarOpen(false);
+    }
+  };
+
   if (!user) return <p>Loading...</p>;
 
   return (
@@ -136,9 +165,9 @@ export default function MessagesPage() {
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
-            <li><a href="/dashboard"><i className="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/dashboard" onClick={handleDashboardClick}><i className="fas fa-home"></i> Dashboard</a></li>
             <li><a href="/dashboard/profile"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i>Hustle Street</a></li>
+            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i> Hustle Street</a></li>
             <li><a href="/dashboard/messages" className="active"><i className="fas fa-envelope"></i> Messages</a></li>
             <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
             <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
@@ -167,7 +196,14 @@ export default function MessagesPage() {
             <span>Messages</span>
             <img src="https://i.pravatar.cc/100" alt="User Profile" />
             <button id="toggleModeBtn" title="Toggle Light/Dark Mode"><i className="fas fa-adjust"></i></button>
-            <button id="toggleMenuBtn" title="Toggle Menu" onClick={() => setSidebarOpen(prev => !prev)}><i className="fas fa-bars"></i></button>
+            <button
+              id="toggleMenuBtn"
+              title="Toggle Menu"
+              onClick={() => setSidebarOpen(prev => !prev)}
+              aria-label="Toggle sidebar menu"
+            >
+              <i className="fas fa-bars"></i>
+            </button>
           </div>
         </header>
 
@@ -222,9 +258,12 @@ export default function MessagesPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <select value={receiver} onChange={(e) => setReceiver(e.target.value)}>
-                {allUsers.filter(u => u.name?.toLowerCase().includes(searchTerm.toLowerCase())).map(u => (
-                  <option key={u.id} value={u.id}>{u.name || u.id}</option>
-                ))}
+                <option value="">Select user</option>
+                {allUsers
+                  .filter(u => u.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .map(u => (
+                    <option key={u.id} value={u.id}>{u.name || u.id}</option>
+                  ))}
               </select>
               <div className="chat-messages">
                 {privateMessages.map((msg, i) => (

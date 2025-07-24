@@ -11,8 +11,23 @@ export default function ToolsPage() {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const toolsPerPage = 10;
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    setSidebarOpen(isDesktop);
+  }, [isDesktop]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -20,7 +35,6 @@ export default function ToolsPage() {
       if (error || !data.user) return router.push('/login');
       setUser(data.user);
     };
-
     fetchUser();
   }, [router]);
 
@@ -46,6 +60,10 @@ export default function ToolsPage() {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  const handleDashboardClick = () => {
+    if (!isDesktop) setSidebarOpen(false);
+  };
+
   if (!user) return <p>Loading...</p>;
 
   return (
@@ -54,9 +72,9 @@ export default function ToolsPage() {
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
-            <li><a href="/dashboard"><i className="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/dashboard" onClick={handleDashboardClick}><i className="fas fa-home"></i> Dashboard</a></li>
             <li><a href="/dashboard/profile"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i>Hustle Street</a></li>
+            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i> Hustle Street</a></li>
             <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
             <li><a href="/dashboard/tools" className="active"><i className="fas fa-toolbox"></i> Tools</a></li>
             <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>

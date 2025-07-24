@@ -5,14 +5,11 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import {
-  FaChartBar,
-  FaCalendarAlt,
-  FaMagic,
-  FaUserPlus,
-  FaStar,
-  FaHistory,
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer
+} from "recharts";
+import {
+  FaChartBar, FaCalendarAlt, FaMagic, FaUserPlus, FaStar, FaHistory
 } from "react-icons/fa";
 
 export default function DashboardPage() {
@@ -22,7 +19,7 @@ export default function DashboardPage() {
   const [clientsCount, setClientsCount] = useState(0);
   const [starsRemaining, setStarsRemaining] = useState(0);
   const [aiAdvice, setAiAdvice] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [starUsage, setStarUsage] = useState([]);
   const [engagements, setEngagements] = useState([]);
@@ -96,24 +93,30 @@ export default function DashboardPage() {
     }, 1500);
   };
 
+  const handleNavClick = () => {
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  };
+
   if (!user) return <p>Loading dashboard...</p>;
 
   return (
     <div className="dashboard">
-      <aside className={`sidebar ${sidebarOpen ? "open" : "closed"}`}>
+      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
-            <li><a href="/dashboard" className="active"><i className="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="/dashboard/profile"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i> Hustle Street</a></li>
-            <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
-            <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
-            <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
-            <li><a href="/dashboard/tutorials"><i className="fas fa-video"></i> Tutorials</a></li>
-            <li><a href="/dashboard/offers"><i className="fas fa-tags"></i> Offers</a></li>
-            <li><a href="/dashboard/help_center"><i className="fas fa-question-circle"></i> Help Center</a></li>
-            <li><a href="/dashboard/settings"><i className="fas fa-cog"></i> Settings</a></li>
+            <li><a href="/dashboard" className="active" onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/dashboard/profile" onClick={handleNavClick}><i className="fas fa-user"></i> Profile</a></li>
+            <li><a href="/dashboard/hustlestreet" onClick={handleNavClick}><i className="fas fa-briefcase"></i> Hustle Street</a></li>
+            <li><a href="/dashboard/messages" onClick={handleNavClick}><i className="fas fa-envelope"></i> Messages</a></li>
+            <li><a href="/dashboard/tools" onClick={handleNavClick}><i className="fas fa-toolbox"></i> Tools</a></li>
+            <li><a href="/dashboard/ebooks" onClick={handleNavClick}><i className="fas fa-book"></i> Ebooks</a></li>
+            <li><a href="/dashboard/tutorials" onClick={handleNavClick}><i className="fas fa-video"></i> Tutorials</a></li>
+            <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
+            <li><a href="/dashboard/help_center" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
+            <li><a href="/dashboard/settings" onClick={handleNavClick}><i className="fas fa-cog"></i> Settings</a></li>
             <li>
               <button
                 onClick={async () => {
@@ -133,10 +136,7 @@ export default function DashboardPage() {
         <header>
           <div className="user-info">
             <span>Welcome back, {profile?.name || user.user_metadata?.name || user.email}</span>
-            <img src={profile?.avatar || "https://i.pravatar.cc/100"} alt="User Profile" />
-            <button id="toggleModeBtn" title="Toggle Light/Dark Mode">
-              <i className="fas fa-adjust"></i>
-            </button>
+            <img src={profile?.avatar || "https://i.pravatar.cc/100"} alt="User" />
             <button id="toggleMenuBtn" title="Toggle Menu" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <i className="fas fa-bars"></i>
             </button>
@@ -184,29 +184,16 @@ export default function DashboardPage() {
 
           <details>
             <summary><FaMagic /> Custom Offer Generator</summary>
-            <div>
-              <input
-                type="text"
-                value={customTitle}
-                onChange={(e) => setCustomTitle(e.target.value)}
-                placeholder="Title"
-              />
-              <textarea
-                value={customDescription}
-                onChange={(e) => setCustomDescription(e.target.value)}
-                placeholder="Description"
-              />
-              <button onClick={generateOffer}>Generate Offer</button>
-              {customTitle && <p><strong>{customTitle}</strong></p>}
-              {customDescription && <p>{customDescription}</p>}
-            </div>
+            <input type="text" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} placeholder="Title" />
+            <textarea value={customDescription} onChange={(e) => setCustomDescription(e.target.value)} placeholder="Description" />
+            <button onClick={generateOffer}>Generate Offer</button>
+            {customTitle && <p><strong>{customTitle}</strong></p>}
+            {customDescription && <p>{customDescription}</p>}
           </details>
 
           <details>
             <summary><FaUserPlus /> Follower/Contact Growth</summary>
-            <ul>
-              {growth.map((g, i) => <li key={i}>{g.date}: {g.count} followers</li>)}
-            </ul>
+            <ul>{growth.map((g, i) => <li key={i}>{g.date}: {g.count} followers</li>)}</ul>
           </details>
         </section>
       </main>
