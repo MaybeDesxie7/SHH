@@ -11,6 +11,10 @@ export default function ProfilePage() {
   const avatarInputRef = useRef(null);
   const router = useRouter();
 
+  // Sidebar states
+  const [sidebarOpen, setSidebarOpen] = useState(false); // default hidden on mobile
+  const [isDesktop, setIsDesktop] = useState(false);
+
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -56,6 +60,32 @@ export default function ProfilePage() {
 
     fetchProfile();
   }, [router]);
+
+  // Detect desktop vs mobile screen size
+  useEffect(() => {
+    const updateMedia = () => {
+      setIsDesktop(window.innerWidth >= 769);
+    };
+    updateMedia();
+    window.addEventListener('resize', updateMedia);
+    return () => window.removeEventListener('resize', updateMedia);
+  }, []);
+
+  // Sidebar open on desktop, close on mobile
+  useEffect(() => {
+    if (isDesktop) {
+      setSidebarOpen(true);
+    } else {
+      setSidebarOpen(false);
+    }
+  }, [isDesktop]);
+
+  // Close sidebar on Dashboard link click if mobile
+  const handleDashboardClick = () => {
+    if (!isDesktop) {
+      setSidebarOpen(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     setProfile((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -116,13 +146,13 @@ export default function ProfilePage() {
   return (
     <div className="dashboard">
       {/* Sidebar */}
-      <aside className="sidebar" id="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} id="sidebar">
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
-            <li><a href="/dashboard"><i className="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/dashboard" onClick={handleDashboardClick}><i className="fas fa-home"></i> Dashboard</a></li>
             <li><a href="/dashboard/profile" className="active"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/services"><i className="fas fa-briefcase"></i> My Services</a></li>
+            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i>Hustle Street</a></li>
             <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
             <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
             <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
@@ -152,7 +182,13 @@ export default function ProfilePage() {
             <span>Manage your profile, {profile.name || profile.email}</span>
             <img src={avatarUrl} alt="User Avatar" />
             <button id="toggleModeBtn" title="Toggle Light/Dark Mode"><i className="fas fa-adjust"></i></button>
-            <button id="toggleMenuBtn" title="Toggle Menu"><i className="fas fa-bars"></i></button>
+            <button
+              id="toggleMenuBtn"
+              title="Toggle Menu"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <i className="fas fa-bars"></i>
+            </button>
           </div>
         </header>
 

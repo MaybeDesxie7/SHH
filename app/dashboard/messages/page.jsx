@@ -1,143 +1,86 @@
-'use client';
+"use client";
+import React, { useEffect, useState } from "react";
+import ChatSidebar from "./ChatSidebar";
+import ChatHeader from "./ChatHeader";
+import GroupChatView from "./GroupChatView";
+import PrivateChatView from "./PrivateChatView";
+import { createClient } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
+import "@/styles/dashboard.css";
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function MessagesPage() {
-  const router = useRouter();
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('group');
-  const [room, setRoom] = useState('creators');
-  const [groupMessages, setGroupMessages] = useState([]);
-  const [groupInput, setGroupInput] = useState('');
-  const [supportMessages, setSupportMessages] = useState([
-    { sender: 'ai', message: "Hi there! I'm your AI assistant. How can I help you today?" }
-  ]);
-  const [supportInput, setSupportInput] = useState('');
-  const [privateMessages, setPrivateMessages] = useState([]);
-  const [privateInput, setPrivateInput] = useState('');
-  const [receiver, setReceiver] = useState('');
-  const [allUsers, setAllUsers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [activeView, setActiveView] = useState("group"); // "group" | "private"
+  const [activeGroup, setActiveGroup] = useState(null);
+  const [activeUser, setActiveUser] = useState(null);
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false); // for mobile slide animation
+
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    setSidebarOpen(isDesktop); // Sidebar always open on desktop
+  }, [isDesktop]);
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) return router.push('/login');
+      if (error || !data.user) return router.push("/login");
       setUser(data.user);
     };
     fetchUser();
   }, [router]);
 
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase.channel('realtime-messages')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
-        const msg = payload.new;
-        if (msg.room === room && activeTab === 'group') {
-          setGroupMessages((prev) => [...prev, msg]);
-        }
-        if ((msg.sender === user.id || msg.receiver === user.id) && activeTab === 'private') {
-          setPrivateMessages((prev) => [...prev, msg]);
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [room, user, activeTab]);
-
-  useEffect(() => {
-    if (user) {
-      fetchGroupMessages();
-      fetchUsers();
-    }
-  }, [room, user]);
-
-  useEffect(() => {
-    if (activeTab === 'private' && user && receiver) fetchPrivateMessages();
-  }, [receiver, activeTab, user]);
-
-  const fetchUsers = async () => {
-    const { data, error } = await supabase.from('profiles').select('id, name, avatar');
-    if (!error) setAllUsers(data.filter(u => u.id !== user.id));
+  const handleDashboardClick = () => {
+    if (!isDesktop) setSidebarOpen(false);
   };
 
-  const fetchGroupMessages = async () => {
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('room', room)
-      .order('sent_at', { ascending: true });
-    if (!error) setGroupMessages(data);
+  const handleSelectGroup = (group) => {
+    setActiveGroup(group);
+    setActiveUser(null);
+    if (!isDesktop) setChatOpen(true); // open chat on mobile
   };
 
-  const fetchPrivateMessages = async () => {
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .or(`sender.eq.${user.id},receiver.eq.${user.id}`)
-      .order('sent_at', { ascending: true });
-
-    if (!error) {
-      const filtered = data.filter(msg => msg.receiver === receiver || msg.sender === receiver);
-      setPrivateMessages(filtered);
-    }
+  const handleSelectUser = (chatUser) => {
+    setActiveUser(chatUser);
+    setActiveGroup(null);
+    if (!isDesktop) setChatOpen(true); // open chat on mobile
   };
 
-  const sendGroupMessage = async () => {
-    if (!groupInput.trim()) return;
-    await supabase.from('messages').insert({ sender: user.id, message: groupInput, room });
-    setGroupInput('');
-  };
-
-  const sendSupportMessage = async () => {
-    if (!supportInput.trim()) return;
-
-    const message = supportInput;
-    setSupportMessages(prev => [...prev, { sender: 'user', message }]);
-    setSupportInput('');
-
-    try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
-      });
-
-      const data = await res.json();
-
-      if (data.status === 'success' && data.reply) {
-        setSupportMessages(prev => [...prev, { sender: 'ai', message: data.reply }]);
-      } else {
-        setSupportMessages(prev => [...prev, { sender: 'ai', message: 'AI assistant failed to respond.' }]);
-      }
-    } catch (error) {
-      console.error('Support Chat Error:', error);
-      setSupportMessages(prev => [...prev, { sender: 'ai', message: 'AI assistant failed to respond.' }]);
-    }
-  };
-
-  const sendPrivateMessage = async () => {
-    if (!privateInput.trim()) return;
-    await supabase.from('messages').insert({ sender: user.id, receiver, message: privateInput });
-    setPrivateInput('');
+  const handleBackToList = () => {
+    setChatOpen(false); // back to list on mobile
   };
 
   if (!user) return <p>Loading...</p>;
 
   return (
     <div className="dashboard">
-      <aside className="sidebar" id="sidebar">
+      {/* Sidebar (Dashboard Navigation) */}
+      <aside className={`sidebar ${sidebarOpen ? "open" : "closed"}`} id="sidebar">
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
-            <li><a href="/dashboard"><i className="fas fa-home"></i> Dashboard</a></li>
+            <li>
+              <a href="/dashboard" onClick={handleDashboardClick}>
+                <i className="fas fa-home"></i> Dashboard
+              </a>
+            </li>
             <li><a href="/dashboard/profile"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/services"><i className="fas fa-briefcase"></i> My Services</a></li>
+            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i> Hustle Street</a></li>
             <li><a href="/dashboard/messages" className="active"><i className="fas fa-envelope"></i> Messages</a></li>
             <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
             <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
@@ -149,9 +92,18 @@ export default function MessagesPage() {
               <button
                 onClick={async () => {
                   await supabase.auth.signOut();
-                  router.push('/login');
+                  router.push("/login");
                 }}
-                style={{ background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 16px' }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#ff4d4d",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "8px 16px",
+                }}
               >
                 <i className="fas fa-sign-out-alt"></i> Logout
               </button>
@@ -160,81 +112,96 @@ export default function MessagesPage() {
         </nav>
       </aside>
 
+      {/* Main Content */}
       <main className="main-content">
         <header>
           <div className="user-info">
             <span>Messages</span>
             <img src="https://i.pravatar.cc/100" alt="User Profile" />
+            <button id="toggleModeBtn" title="Toggle Light/Dark Mode">
+              <i className="fas fa-adjust"></i>
+            </button>
+            <button
+              id="toggleMenuBtn"
+              title="Toggle Menu"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+            >
+              <i className="fas fa-bars"></i>
+            </button>
           </div>
         </header>
 
-        <section className="chat-section">
-          <div className="chat-tabs">
-            {['group', 'support', 'private'].map(tab => (
-              <button key={tab} className={`tab ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
-                {tab === 'group' ? 'Group Chat' : tab === 'support' ? 'Support Chat' : 'Private Messages'}
-              </button>
-            ))}
-          </div>
+        {/* Desktop Layout */}
+        {isDesktop ? (
+          <div className="messages-wrapper">
+            <ChatSidebar
+              user={user}
+              onSelectGroup={handleSelectGroup}
+              onSelectUser={handleSelectUser}
+              activeView={activeView}
+              setActiveView={setActiveView}
+            />
 
-          {activeTab === 'group' && (
-            <div className="chat-box active">
-              <select value={room} onChange={(e) => setRoom(e.target.value)}>
-                <option value="creators">Content Creators</option>
-                <option value="developers">Developers</option>
-                <option value="marketers">Marketers</option>
-              </select>
-              <div className="chat-messages">
-                {groupMessages.map((msg, i) => (
-                  <div key={i} className="message user">[{msg.room}] {msg.sender}: {msg.message}</div>
-                ))}
-              </div>
-              <div className="chat-input">
-                <input type="text" value={groupInput} onChange={(e) => setGroupInput(e.target.value)} placeholder="Type your message..." />
-                <button onClick={sendGroupMessage}><i className="fas fa-paper-plane"></i></button>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'support' && (
-            <div className="chat-box active">
-              <div className="chat-messages">
-                {supportMessages.map((msg, i) => (
-                  <div key={i} className={`message ${msg.sender}`}>{msg.message}</div>
-                ))}
-              </div>
-              <div className="chat-input">
-                <input type="text" value={supportInput} onChange={(e) => setSupportInput(e.target.value)} placeholder="Ask something..." />
-                <button onClick={sendSupportMessage}><i className="fas fa-paper-plane"></i></button>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'private' && (
-            <div className="chat-box active">
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+            <div className="messages-panel">
+              <ChatHeader
+                user={user}
+                activeGroup={activeGroup}
+                activeUser={activeUser}
+                activeView={activeView}
               />
-              <select value={receiver} onChange={(e) => setReceiver(e.target.value)}>
-                {allUsers.filter(u => u.name?.toLowerCase().includes(searchTerm.toLowerCase())).map(u => (
-                  <option key={u.id} value={u.id}>{u.name || u.id}</option>
-                ))}
-              </select>
-              <div className="chat-messages">
-                {privateMessages.map((msg, i) => (
-                  <div key={i} className={`message user ${msg.sender === user.id ? 'sent' : 'received'}`}>{msg.message}</div>
-                ))}
-              </div>
-              <div className="chat-input">
-                <input type="text" value={privateInput} onChange={(e) => setPrivateInput(e.target.value)} placeholder="Send a private message..." />
-                <button onClick={sendPrivateMessage}><i className="fas fa-paper-plane"></i></button>
-              </div>
+
+              {activeView === "group" && activeGroup ? (
+                <GroupChatView group={activeGroup} user={user} />
+              ) : activeView === "private" && activeUser ? (
+                <PrivateChatView recipient={activeUser} user={user} />
+              ) : (
+                <div className="messages-placeholder">
+                  Select a chat to start messaging.
+                </div>
+              )}
             </div>
-          )}
-        </section>
+          </div>
+        ) : (
+          // Mobile Layout
+          <div className="mobile-messages">
+  {/* Chat List */}
+  <div className={`mobile-chat-list ${chatOpen ? "slide-out" : "slide-in"}`}>
+    <div className="mobile-topbar">
+      <h2>{activeView === "group" ? "Groups" : "Chats"}</h2>
+    </div>
+    <ChatSidebar
+      user={user}
+      onSelectGroup={handleSelectGroup}
+      onSelectUser={handleSelectUser}
+      activeView={activeView}
+      setActiveView={setActiveView}
+    />
+  </div>
+
+            {/* Chat Screen */}
+            <div className={`mobile-chat-panel ${chatOpen ? "slide-in" : "slide-out"}`}>
+    <div className="chat-header-mobile">
+      <button className="back-btn" onClick={handleBackToList}>
+        <i className="fas fa-arrow-left"></i>
+      </button>
+      <ChatHeader
+        activeGroup={activeGroup}
+        activeUser={activeUser}
+        activeView={activeView}
+      />
+    </div>
+              
+         {activeView === "group" && activeGroup ? (
+      <GroupChatView group={activeGroup} user={user} />
+    ) : activeView === "private" && activeUser ? (
+      <PrivateChatView recipient={activeUser} user={user} />
+    ) : (
+      <div className="messages-placeholder">Select a chat to start messaging.</div>
+    )}
+  </div>
+</div>   
+          
+        )}
       </main>
     </div>
   );

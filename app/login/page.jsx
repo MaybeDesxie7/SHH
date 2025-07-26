@@ -1,40 +1,28 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import Image from 'next/image';
+import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
+import '@/styles/style.css'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState(null);
-  const router = useRouter();
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    e.preventDefault()
+    setError(null)
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError(error.message);
-      return;
-    }
-
-    const user_id = data.user.id;
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('user_id', user_id)
-      .single();
-
-    if (profile?.role === 'admin') {
-      router.push('/admin');
+      setError(error.message)
     } else {
-      router.push('/dashboard');
+      router.push('/dashboard')
     }
-  };
+  }
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -45,42 +33,50 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="auth-container" id="login-container">
-      <Image src="/logo.png" alt="Logo" width={80} height={80} className="auth-logo" />
-      <h1 className="auth-title">Login</h1>
-      <form onSubmit={handleLogin} className="auth-form">
+    <div className="auth-container">
+      <form className="auth-form" onSubmit={handleLogin}>
+        <img src="/logo.png" alt="Logo" className="auth-logo" />
+        <h2>Login to Smart Hustle Hub</h2>
+
+        {error && <p className="auth-error">{error}</p>}
+
         <input
           type="email"
-          id="login-email"
-          className="auth-input"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
+          value={email}
           required
+          onChange={(e) => setEmail(e.target.value)}
         />
-        <div className="auth-password-group">
+
+        <div className="password-field">
           <input
             type={showPassword ? 'text' : 'password'}
-            id="login-password"
-            className="auth-input"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
+            value={password}
             required
+            onChange={(e) => setPassword(e.target.value)}
           />
-          <span
-            className="auth-toggle"
+          <button
+            type="button"
+            className="toggle-password"
             onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? 'Hide' : 'Show'}
-          </span>
+          </button>
         </div>
-        {error && <p className="auth-error">{error}</p>}
-        <button type="submit" className="auth-button">Login</button>
-        <p className="auth-switch">
-          Don’t have an account? <a href="/signup">Sign up</a>
+
+        <button type="submit" className="auth-btn">Login</button>
+
+        <p className="or-separator">or</p>
+
+        <button type="button" className="google-btn" onClick={handleGoogleLogin}>
+          Sign in with Google
+        </button>
+
+        <p className="auth-link">
+          Don't have an account? <a href="/signup">Sign up here</a>
         </p>
       </form>
     </div>
-  );
+  )
 }
