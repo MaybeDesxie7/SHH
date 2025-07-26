@@ -65,6 +65,13 @@ export default function MessagesPage() {
     setChatOpen(false); // back to list on mobile
   };
 
+  // Close sidebar on Dashboard link click if mobile
+  const handleDashboardClick = (e) => {
+    if (!isDesktop) {
+      setSidebarOpen(false);
+    }
+  };
+
   if (!user) return <p>Loading...</p>;
 
   return (
