@@ -15,16 +15,12 @@ const supabase = createClient(
 
 export default function MessagesPage() {
   const [user, setUser] = useState(null);
-  const [activeView, setActiveView] = useState("group"); // "group" | "private"
+  const [activeView, setActiveView] = useState("group");
   const [activeGroup, setActiveGroup] = useState(null);
   const [activeUser, setActiveUser] = useState(null);
-
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false); // for mobile slide animation
-
-  const router = useRouter();
-
+  const [chatOpen, setChatOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const router = useRouter();
@@ -38,7 +34,7 @@ export default function MessagesPage() {
   }, []);
 
   useEffect(() => {
-    setSidebarOpen(isDesktop); // Sidebar always open on desktop
+    setSidebarOpen(isDesktop);
   }, [isDesktop]);
 
   // Fetch user and auto-join role group
@@ -47,6 +43,9 @@ export default function MessagesPage() {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user) return router.push("/login");
       setUser(data.user);
+    };
+    initUserAndGroup();
+  }, [router]);
 
   const handleDashboardClick = () => {
     if (!isDesktop) setSidebarOpen(false);
@@ -55,36 +54,26 @@ export default function MessagesPage() {
   const handleSelectGroup = (group) => {
     setActiveGroup(group);
     setActiveUser(null);
-    if (!isDesktop) setChatOpen(true); // open chat on mobile
-  };
-
-  const handleSelectUser = (chatUser) => {
-    setActiveUser(chatUser);
-    setActiveGroup(null);
-    if (!isDesktop) setChatOpen(true); // open chat on mobile
-  };
-
-  const handleBackToList = () => {
-    setChatOpen(false); // back to list on mobile
+    if (!isDesktop) setChatOpen(true);
+    setSearch("");
   };
 
   const handleSelectUser = (chatUser) => {
     setActiveUser(chatUser);
     setActiveGroup(null);
     if (!isDesktop) setChatOpen(true);
-    setSearch(""); // Clear search on new selection
+    setSearch("");
   };
 
   const handleBackToList = () => {
     setChatOpen(false);
-    setSearch(""); // Clear search on back
+    setSearch("");
   };
 
   if (!user) return <p>Loading...</p>;
 
   return (
     <div className="dashboard">
-      {/* Sidebar (Dashboard Navigation) */}
       <aside className={`sidebar ${sidebarOpen ? "open" : "closed"}`} id="sidebar">
         <div className="logo">Smart Hustle Hub</div>
         <nav>
@@ -120,16 +109,13 @@ export default function MessagesPage() {
                   padding: "8px 16px",
                 }}
               >
-                <a
-                  href="/dashboard/Premium"
-                  onClick={handleNavClick}
-                  style={{ color: "#fff", fontWeight: "bold" }}
-                >
-                  <i className="fas fa-crown"></i> Go Premium
-                </a>
-              </motion.li>
+                <i className="fas fa-sign-out-alt"></i> Logout
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </aside>
 
-      {/* Main Content */}
       <main className="main-content">
         <header>
           <div className="user-info">
@@ -148,7 +134,6 @@ export default function MessagesPage() {
           </div>
         </header>
 
-        {/* Desktop Layout */}
         {isDesktop ? (
           <div className="messages-wrapper">
             <ChatSidebar
@@ -158,7 +143,6 @@ export default function MessagesPage() {
               activeView={activeView}
               setActiveView={setActiveView}
             />
-
             <div className="messages-panel">
               <ChatHeader
                 user={user}
@@ -166,58 +150,50 @@ export default function MessagesPage() {
                 activeUser={activeUser}
                 activeView={activeView}
               />
-
               {activeView === "group" && activeGroup ? (
                 <GroupChatView group={activeGroup} user={user} />
               ) : activeView === "private" && activeUser ? (
                 <PrivateChatView recipient={activeUser} user={user} />
               ) : (
-                <div className="messages-placeholder">
-                  Select a chat to start messaging.
-                </div>
+                <div className="messages-placeholder">Select a chat to start messaging.</div>
               )}
             </div>
           </div>
         ) : (
-          // Mobile Layout
           <div className="mobile-messages">
-  {/* Chat List */}
-  <div className={`mobile-chat-list ${chatOpen ? "slide-out" : "slide-in"}`}>
-    <div className="mobile-topbar">
-      <h2>{activeView === "group" ? "Groups" : "Chats"}</h2>
-    </div>
-    <ChatSidebar
-      user={user}
-      onSelectGroup={handleSelectGroup}
-      onSelectUser={handleSelectUser}
-      activeView={activeView}
-      setActiveView={setActiveView}
-    />
-  </div>
+            <div className={`mobile-chat-list ${chatOpen ? "slide-out" : "slide-in"}`}>
+              <div className="mobile-topbar">
+                <h2>{activeView === "group" ? "Groups" : "Chats"}</h2>
+              </div>
+              <ChatSidebar
+                user={user}
+                onSelectGroup={handleSelectGroup}
+                onSelectUser={handleSelectUser}
+                activeView={activeView}
+                setActiveView={setActiveView}
+              />
+            </div>
 
-            {/* Chat Screen */}
             <div className={`mobile-chat-panel ${chatOpen ? "slide-in" : "slide-out"}`}>
-    <div className="chat-header-mobile">
-      <button className="back-btn" onClick={handleBackToList}>
-        <i className="fas fa-arrow-left"></i>
-      </button>
-      <ChatHeader
-        activeGroup={activeGroup}
-        activeUser={activeUser}
-        activeView={activeView}
-      />
-    </div>
-              
-         {activeView === "group" && activeGroup ? (
-      <GroupChatView group={activeGroup} user={user} />
-    ) : activeView === "private" && activeUser ? (
-      <PrivateChatView recipient={activeUser} user={user} />
-    ) : (
-      <div className="messages-placeholder">Select a chat to start messaging.</div>
-    )}
-  </div>
-</div>   
-          
+              <div className="chat-header-mobile">
+                <button className="back-btn" onClick={handleBackToList}>
+                  <i className="fas fa-arrow-left"></i>
+                </button>
+                <ChatHeader
+                  activeGroup={activeGroup}
+                  activeUser={activeUser}
+                  activeView={activeView}
+                />
+              </div>
+              {activeView === "group" && activeGroup ? (
+                <GroupChatView group={activeGroup} user={user} />
+              ) : activeView === "private" && activeUser ? (
+                <PrivateChatView recipient={activeUser} user={user} />
+              ) : (
+                <div className="messages-placeholder">Select a chat to start messaging.</div>
+              )}
+            </div>
+          </div>
         )}
       </main>
     </div>
