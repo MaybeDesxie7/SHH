@@ -21,6 +21,7 @@ export default function HustleStreetPage() {
   const [expandedCard, setExpandedCard] = useState(null);
   const [topUsers, setTopUsers] = useState([]);
 
+  // Check screen size for sidebar behavior
   useEffect(() => {
     const checkScreenSize = () => {
       const isWide = window.innerWidth >= 768;
@@ -140,42 +141,70 @@ export default function HustleStreetPage() {
 
   if (loading) return <p>Loading...</p>;
 
-// Utility function to toggle sidebar
-function toggleSidebar() {
-  setSidebarOpen(prev => !prev);
-}
+  // Sidebar toggle and nav close on mobile
+  function toggleSidebar() {
+    setSidebarOpen(prev => !prev);
+  }
 
-// Auto-close sidebar on dashboard click (on mobile)
-function handleDashboardClick() {
-  if (!isDesktop) setSidebarOpen(false);
-}
-
-
+  function handleNavClick() {
+    if (!isDesktop) setSidebarOpen(false);
+  }
 
   return (
     <div className="dashboard">
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} id="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
-            <li><a href="/dashboard" onClick={handleDashboardClick}><i className="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="/dashboard/profile" className="active"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i>Hustle Street</a></li>
-            <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
-            <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
-            <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
-            <li><a href="/dashboard/tutorials"><i className="fas fa-video"></i> Tutorials</a></li>
-            <li><a href="/dashboard/offers"><i className="fas fa-tags"></i> Offers</a></li>
-            <li><a href="/dashboard/help_center"><i className="fas fa-question-circle"></i> Help Center</a></li>
-            <li><a href="/dashboard/settings"><i className="fas fa-cog"></i> Settings</a></li>
+            <li><a href="/dashboard" onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/dashboard/profile" onClick={handleNavClick}><i className="fas fa-user"></i> Profile</a></li>
+            <li><a href="/dashboard/hustlestreet" className="active" onClick={handleNavClick}><i className="fas fa-briefcase"></i> Hustle Street</a></li>
+            <li><a href="/dashboard/messages" onClick={handleNavClick}><i className="fas fa-envelope"></i> Messages</a></li>
+            <li><a href="/dashboard/tools" onClick={handleNavClick}><i className="fas fa-toolbox"></i> Tools</a></li>
+            <li><a href="/dashboard/ebooks" onClick={handleNavClick}><i className="fas fa-book"></i> Ebooks</a></li>
+            <li><a href="/dashboard/HustleChallenges" onClick={handleNavClick}><i className="fas fa-trophy"></i> Challenges</a></li>
+            <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
+            <li><a href="/dashboard/help_center" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
+
+            {/* ✅ Premium link with Framer Motion pulse */}
+            <motion.li
+              style={{
+                background: "linear-gradient(90deg, #FFD700, #FFA500)",
+                borderRadius: "8px",
+                margin: "10px 0"
+              }}
+              animate={{
+                scale: [1, 1.05, 1],
+                opacity: [1, 0.9, 1]
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity
+              }}
+            >
+              <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
+                <i className="fas fa-crown"></i> Go Premium
+              </a>
+            </motion.li>
+
+            <li><a href="/dashboard/settings" onClick={handleNavClick}><i className="fas fa-cog"></i> Settings</a></li>
             <li>
               <button
                 onClick={async () => {
                   await supabase.auth.signOut();
                   router.push('/login');
                 }}
-                style={{ background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 16px' }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#ff4d4d',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '8px 16px'
+                }}
               >
                 <i className="fas fa-sign-out-alt"></i> Logout
               </button>
@@ -184,11 +213,11 @@ function handleDashboardClick() {
         </nav>
       </aside>
 
-
+      {/* Main Content */}
       <main className="main-content">
         <header>
           <div className="user-info">
-            <span>Help Center</span>
+            <span>Hustle Street</span>
             <img src="https://i.pravatar.cc/100" alt="User Profile" />
             <button id="toggleModeBtn"><i className="fas fa-adjust" /></button>
             <button id="toggleMenuBtn" onClick={toggleSidebar}>
@@ -197,6 +226,7 @@ function handleDashboardClick() {
           </div>
         </header>
 
+        {/* Collapsible Cards */}
         <section className="shh-feature-cards">
           {[
             { name: 'My Offers', key: 'my' },
@@ -226,7 +256,7 @@ function handleDashboardClick() {
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    {/* === TOP USERS CARD CONTENT === */}
+                    {/* === Content for each card === */}
                     {card.key === 'top' && (
                       topUsers.length === 0
                         ? <p>No top users yet.</p>

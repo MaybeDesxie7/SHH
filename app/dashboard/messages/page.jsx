@@ -25,6 +25,11 @@ export default function MessagesPage() {
 
   const router = useRouter();
 
+  const [search, setSearch] = useState("");
+
+  const router = useRouter();
+
+  // Detect screen size
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
     handleResize();
@@ -36,14 +41,12 @@ export default function MessagesPage() {
     setSidebarOpen(isDesktop); // Sidebar always open on desktop
   }, [isDesktop]);
 
+  // Fetch user and auto-join role group
   useEffect(() => {
-    const fetchUser = async () => {
+    const initUserAndGroup = async () => {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user) return router.push("/login");
       setUser(data.user);
-    };
-    fetchUser();
-  }, [router]);
 
   const handleDashboardClick = () => {
     if (!isDesktop) setSidebarOpen(false);
@@ -65,11 +68,16 @@ export default function MessagesPage() {
     setChatOpen(false); // back to list on mobile
   };
 
-  // Close sidebar on Dashboard link click if mobile
-  const handleDashboardClick = (e) => {
-    if (!isDesktop) {
-      setSidebarOpen(false);
-    }
+  const handleSelectUser = (chatUser) => {
+    setActiveUser(chatUser);
+    setActiveGroup(null);
+    if (!isDesktop) setChatOpen(true);
+    setSearch(""); // Clear search on new selection
+  };
+
+  const handleBackToList = () => {
+    setChatOpen(false);
+    setSearch(""); // Clear search on back
   };
 
   if (!user) return <p>Loading...</p>;
@@ -112,12 +120,14 @@ export default function MessagesPage() {
                   padding: "8px 16px",
                 }}
               >
-                <i className="fas fa-sign-out-alt"></i> Logout
-              </button>
-            </li>
-          </ul>
-        </nav>
-      </aside>
+                <a
+                  href="/dashboard/Premium"
+                  onClick={handleNavClick}
+                  style={{ color: "#fff", fontWeight: "bold" }}
+                >
+                  <i className="fas fa-crown"></i> Go Premium
+                </a>
+              </motion.li>
 
       {/* Main Content */}
       <main className="main-content">

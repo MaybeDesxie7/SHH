@@ -80,8 +80,8 @@ export default function ProfilePage() {
     }
   }, [isDesktop]);
 
-  // Close sidebar on Dashboard link click if mobile
-  const handleDashboardClick = () => {
+  // ✅ FIX: Function for navigation click (closes sidebar on mobile)
+  const handleNavClick = () => {
     if (!isDesktop) {
       setSidebarOpen(false);
     }
@@ -146,20 +146,28 @@ export default function ProfilePage() {
   return (
     <div className="dashboard">
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} id="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
-            <li><a href="/dashboard" onClick={handleDashboardClick}><i className="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="/dashboard/profile" className="active"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i>Hustle Street</a></li>
-            <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
-            <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
-            <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
-            <li><a href="/dashboard/tutorials"><i className="fas fa-video"></i> Tutorials</a></li>
-            <li><a href="/dashboard/offers"><i className="fas fa-tags"></i> Offers</a></li>
-            <li><a href="/dashboard/help_center"><i className="fas fa-question-circle"></i> Help Center</a></li>
-            <li><a href="/dashboard/settings"><i className="fas fa-cog"></i> Settings</a></li>
+            <li><a href="/dashboard" onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/dashboard/profile" className="active" onClick={handleNavClick}><i className="fas fa-user"></i> Profile</a></li>
+            <li><a href="/dashboard/hustlestreet" onClick={handleNavClick}><i className="fas fa-briefcase"></i> Hustle Street</a></li>
+            <li><a href="/dashboard/messages" onClick={handleNavClick}><i className="fas fa-envelope"></i> Messages</a></li>
+            <li><a href="/dashboard/tools" onClick={handleNavClick}><i className="fas fa-toolbox"></i> Tools</a></li>
+            <li><a href="/dashboard/ebooks" onClick={handleNavClick}><i className="fas fa-book"></i> Ebooks</a></li>
+            <li><a href="/dashboard/HustleChallenges" onClick={handleNavClick}><i className="fas fa-trophy"></i> Challenges</a></li>
+            <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
+            <li><a href="/dashboard/help_center" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
+
+            {/* Premium Highlight */}
+            <li style={{ background: "linear-gradient(90deg, #FFD700, #FFA500)", borderRadius: "8px", margin: "10px 0" }}>
+              <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
+                <i className="fas fa-crown"></i> Go Premium
+              </a>
+            </li>
+
+            <li><a href="/dashboard/settings" onClick={handleNavClick}><i className="fas fa-cog"></i> Settings</a></li>
             <li>
               <button
                 onClick={async () => {

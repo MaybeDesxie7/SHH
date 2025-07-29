@@ -1,15 +1,17 @@
-'use client';
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 export default function OffersPage() {
   const router = useRouter();
   const [offers, setOffers] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // start hidden on mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
 
+  // ✅ Fetch offers
   useEffect(() => {
     const fetchOffers = async () => {
       const { data, error } = await supabase.from("offers").select("*");
@@ -22,25 +24,22 @@ export default function OffersPage() {
     fetchOffers();
   }, []);
 
-  // Detect desktop vs mobile screen size
+  // ✅ Detect screen size
   useEffect(() => {
     const updateMedia = () => {
-      setIsDesktop(window.innerWidth >= 769);
+      setIsDesktop(window.innerWidth >= 1024);
     };
     updateMedia();
-    window.addEventListener('resize', updateMedia);
-    return () => window.removeEventListener('resize', updateMedia);
+    window.addEventListener("resize", updateMedia);
+    return () => window.removeEventListener("resize", updateMedia);
   }, []);
 
-  // Force sidebar open on desktop, close on mobile
+  // ✅ Sidebar behavior
   useEffect(() => {
-    if (isDesktop) {
-      setSidebarOpen(true);
-    } else {
-      setSidebarOpen(false);
-    }
+    setSidebarOpen(isDesktop);
   }, [isDesktop]);
 
+  // ✅ Countdown logic
   const getCountdown = (deadline) => {
     const diff = new Date(deadline) - new Date();
     if (diff < 0) return "⛔ Deal expired";
@@ -53,44 +52,113 @@ export default function OffersPage() {
     return `⏳ ${days}d ${hrs}h ${mins}m ${secs}s left`;
   };
 
-  // Close sidebar on Dashboard link click if mobile
-  const handleDashboardClick = () => {
-    if (!isDesktop) {
-      setSidebarOpen(false);
-    }
-  };
+  // ✅ Close sidebar on navigation (mobile only)
+  function handleNavClick() {
+    if (!isDesktop) setSidebarOpen(false);
+  }
 
   return (
     <div className="dashboard">
-      <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} id="sidebar">
+      {/* Sidebar */}
+      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="logo">Smart Hustle Hub</div>
         <nav>
           <ul>
-            <li><a href="/dashboard" onClick={handleDashboardClick}><i className="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="/dashboard/profile"><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/hustlestreet"><i className="fas fa-briefcase"></i> Hustle Street</a></li>
-            <li><a href="/dashboard/messages"><i className="fas fa-envelope"></i> Messages</a></li>
-            <li><a href="/dashboard/tools"><i className="fas fa-toolbox"></i> Tools</a></li>
-            <li><a href="/dashboard/ebooks"><i className="fas fa-book"></i> Ebooks</a></li>
-            <li><a href="/dashboard/tutorials"><i className="fas fa-video"></i> Tutorials</a></li>
-            <li><a href="/dashboard/offers" className="active"><i className="fas fa-tags"></i> Offers</a></li>
-            <li><a href="/dashboard/help_center"><i className="fas fa-question-circle"></i> Help Center</a></li>
-            <li><a href="/dashboard/settings"><i className="fas fa-cog"></i> Settings</a></li>
+            <li>
+              <a href="/dashboard" onClick={handleNavClick}>
+                <i className="fas fa-home"></i> Dashboard
+              </a>
+            </li>
+            <li>
+              <a href="/dashboard/profile" onClick={handleNavClick}>
+                <i className="fas fa-user"></i> Profile
+              </a>
+            </li>
+            <li>
+              <a href="/dashboard/hustlestreet" onClick={handleNavClick}>
+                <i className="fas fa-briefcase"></i> Hustle Street
+              </a>
+            </li>
+            <li>
+              <a href="/dashboard/messages" onClick={handleNavClick}>
+                <i className="fas fa-envelope"></i> Messages
+              </a>
+            </li>
+            <li>
+              <a href="/dashboard/tools" onClick={handleNavClick}>
+                <i className="fas fa-toolbox"></i> Tools
+              </a>
+            </li>
+            <li>
+              <a href="/dashboard/ebooks" onClick={handleNavClick}>
+                <i className="fas fa-book"></i> Ebooks
+              </a>
+            </li>
+            <li>
+              <a href="/dashboard/HustleChallenges" onClick={handleNavClick}>
+                <i className="fas fa-trophy"></i> Challenges
+              </a>
+            </li>
+            <li>
+              <a
+                href="/dashboard/offers"
+                className="active"
+                onClick={handleNavClick}
+              >
+                <i className="fas fa-tags"></i> Offers
+              </a>
+            </li>
+            <li>
+              <a href="/dashboard/help_center" onClick={handleNavClick}>
+                <i className="fas fa-question-circle"></i> Help Center
+              </a>
+            </li>
+
+            {/* ✅ Animated Premium Button */}
+            <motion.li
+              style={{
+                background: "linear-gradient(90deg, #FFD700, #FFA500)",
+                borderRadius: "8px",
+                margin: "10px 0",
+              }}
+              animate={{
+                scale: [1, 1.05, 1],
+                opacity: [1, 0.9, 1],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+              }}
+            >
+              <a
+                href="/dashboard/Premium"
+                onClick={handleNavClick}
+                style={{ color: "#fff", fontWeight: "bold" }}
+              >
+                <i className="fas fa-crown"></i> Go Premium
+              </a>
+            </motion.li>
+
+            <li>
+              <a href="/dashboard/settings" onClick={handleNavClick}>
+                <i className="fas fa-cog"></i> Settings
+              </a>
+            </li>
             <li>
               <button
                 onClick={async () => {
                   await supabase.auth.signOut();
-                  router.push('/login');
+                  router.push("/login");
                 }}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#ff4d4d',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '8px 16px'
+                  background: "none",
+                  border: "none",
+                  color: "#ff4d4d",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "8px 16px",
                 }}
               >
                 <i className="fas fa-sign-out-alt"></i> Logout
@@ -100,13 +168,19 @@ export default function OffersPage() {
         </nav>
       </aside>
 
+      {/* Main Content */}
       <main className="main-content">
         <header>
           <div className="user-info">
             <span>Deals & Offers</span>
             <img src="https://i.pravatar.cc/100" alt="User Profile" />
-            <button id="toggleModeBtn"><i className="fas fa-adjust" /></button>
-            <button id="toggleMenuBtn" onClick={() => setSidebarOpen(prev => !prev)}>
+            <button id="toggleModeBtn">
+              <i className="fas fa-adjust" />
+            </button>
+            <button
+              id="toggleMenuBtn"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+            >
               <i className="fas fa-bars" />
             </button>
           </div>
@@ -121,7 +195,14 @@ export default function OffersPage() {
                 <h3>{offer.title}</h3>
                 <p>{offer.description}</p>
                 <div className="countdown">{getCountdown(offer.deadline)}</div>
-                <a href={offer.url} target="_blank" rel="noreferrer" className="redeem-btn">Redeem</a>
+                <a
+                  href={offer.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="redeem-btn"
+                >
+                  Redeem
+                </a>
               </div>
             ))
           )}

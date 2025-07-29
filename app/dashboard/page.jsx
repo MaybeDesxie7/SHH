@@ -9,7 +9,7 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer
 } from "recharts";
 import {
-  FaChartBar, FaCalendarAlt, FaMagic, FaUserPlus, FaStar, FaHistory
+  FaChartBar, FaCalendarAlt, FaMagic, FaUserPlus, FaStar, FaHistory, FaCrown
 } from "react-icons/fa";
 
 export default function DashboardPage() {
@@ -94,7 +94,7 @@ export default function DashboardPage() {
   };
 
   const handleNavClick = () => {
-    if (window.innerWidth < 768) {
+    if (window.innerWidth < 1024) {
       setSidebarOpen(false);
     }
   };
@@ -113,9 +113,17 @@ export default function DashboardPage() {
             <li><a href="/dashboard/messages" onClick={handleNavClick}><i className="fas fa-envelope"></i> Messages</a></li>
             <li><a href="/dashboard/tools" onClick={handleNavClick}><i className="fas fa-toolbox"></i> Tools</a></li>
             <li><a href="/dashboard/ebooks" onClick={handleNavClick}><i className="fas fa-book"></i> Ebooks</a></li>
-            <li><a href="/dashboard/tutorials" onClick={handleNavClick}><i className="fas fa-video"></i> Tutorials</a></li>
+            <li><a href="/dashboard/HustleChallenges" onClick={handleNavClick}><i className="fas fa-trophy"></i>Challenges</a></li>
             <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
             <li><a href="/dashboard/help_center" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
+
+            {/* Premium Link - Highlighted */}
+            <li style={{ background: "linear-gradient(90deg, #FFD700, #FFA500)", borderRadius: "8px", margin: "10px 0" }}>
+              <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
+                <i className="fas fa-crown"></i> Go Premium
+              </a>
+            </li>
+
             <li><a href="/dashboard/settings" onClick={handleNavClick}><i className="fas fa-cog"></i> Settings</a></li>
             <li>
               <button
@@ -143,6 +151,7 @@ export default function DashboardPage() {
           </div>
         </header>
 
+        {/* Overview Cards */}
         <section className="overview">
           <div className="stats-grid">
             <div className="card"><i className="fas fa-users"></i><h3>Clients</h3><p>{clientsCount}</p></div>
@@ -151,12 +160,61 @@ export default function DashboardPage() {
           </div>
         </section>
 
+        {/* ✅ Premium Upgrade Highlight with Animation */}
+        <motion.section
+          className="premium-highlight"
+          style={{
+            background: "linear-gradient(135deg, #FFD700, #FFA500)",
+            borderRadius: "12px",
+            padding: "20px",
+            color: "#fff",
+            margin: "20px 0",
+            textAlign: "center",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.2)"
+          }}
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          whileHover={{ scale: 1.05 }}
+        >
+          <motion.h2
+            style={{ fontSize: "24px", fontWeight: "bold" }}
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+          >
+            <FaCrown /> Upgrade to Premium
+          </motion.h2>
+          <p style={{ marginTop: "10px", fontSize: "16px" }}>Unlock exclusive perks, double rewards, and more!</p>
+          <a href="/dashboard/Premium">
+            <motion.button
+              style={{
+                background: "#fff",
+                color: "#FFA500",
+                fontWeight: "bold",
+                padding: "12px 20px",
+                borderRadius: "8px",
+                marginTop: "15px",
+                border: "none",
+                fontSize: "16px",
+                cursor: "pointer",
+                boxShadow: "0 3px 8px rgba(0,0,0,0.2)"
+              }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Go Premium Now
+            </motion.button>
+          </a>
+        </motion.section>
+
+        {/* Star AI Assistant */}
         <section className="star-ai-box">
           <h3><FaStar /> Star AI Assistant</h3>
           <p>{aiAdvice || "Click to get advice tailored to your hustle."}</p>
           <button onClick={handleStarAIAdvice}>Ask Star AI</button>
         </section><br />
 
+        {/* Collapsible Sections */}
         <section className="collapsible">
           <details>
             <summary><FaHistory /> Star Usage History</summary>
