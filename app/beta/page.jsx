@@ -1,23 +1,36 @@
-// app/beta/page.jsx
-"use client";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+'use client';
 
-export default function BetaInvitePage() {
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
+export default function BetaPage() {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const [status, setStatus] = useState("Checking invite...");
+  const token = searchParams.get('token');
+  const [status, setStatus] = useState('Checking invite token...');
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
     if (!token) {
-      setStatus("No token provided.");
+      setStatus('No token provided.');
       return;
     }
 
-    // Replace with actual Supabase check later
-    setTimeout(() => {
-      setStatus(`Welcome! Your invite token is valid: ${token}`);
-    }, 1000);
+    const checkToken = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('beta_invite_token', token)
+        .single();
+
+      if (error || !data) {
+        setStatus('Invalid or expired token.');
+      } else {
+        setStatus(`Welcome, ${data.email}! Your invite token is valid.`);
+      }
+    };
+
+    checkToken();
   }, [token]);
 
   return (
