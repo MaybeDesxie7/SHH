@@ -2186,3 +2186,13 @@ canvas {
   background: #333;
 }
 
+.beta-banner {
+  background-color: #111;
+  color: #fff;
+  padding: 10px;
+  text-align: center;
+  font-size: 14px;
+  border-bottom: 2px solid #ffd700;
+}
+
+

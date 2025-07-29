@@ -142,6 +142,10 @@ export default function DashboardPage() {
 
       <main className="main-content">
         <header>
+          <div className="beta-banner">
+  <p>🚧 You are using the <strong>Beta Version</strong> of Glimo — feedback welcome!</p>
+</div>
+
           <div className="user-info">
             <span>Welcome back, {profile?.name || user.user_metadata?.name || user.email}</span>
             <img src={profile?.avatar || "https://i.pravatar.cc/100"} alt="User" />
