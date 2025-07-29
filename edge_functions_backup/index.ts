@@ -1,8 +1,8 @@
-// index.ts for manage-stars function
+// @ts-nocheck
 import { serve } from 'std/server';
 import { createClient } from '@supabase/supabase-js';
 
-serve(async (req) => {
+serve(async (req: Request) => {
   try {
     // Get environment variables (available only in deployed function)
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
