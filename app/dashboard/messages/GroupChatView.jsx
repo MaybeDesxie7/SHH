@@ -30,7 +30,6 @@ export default function GroupChatView({ group, user }) {
 
     fetchMessages();
 
-    // ✅ Subscribe to new messages in this group
     const messageSub = supabase
       .channel(`group-messages-${group.id}`)
       .on(
@@ -48,7 +47,6 @@ export default function GroupChatView({ group, user }) {
       )
       .subscribe();
 
-    // ✅ Typing indicator subscription
     const typingSub = supabase
       .channel(`typing-${group.id}`)
       .on("broadcast", { event: "typing" }, ({ payload }) => {
@@ -106,39 +104,43 @@ export default function GroupChatView({ group, user }) {
 
   if (!group) {
     return (
-      <div className="group-chat-view">
+      <div id="group-chat-wrapper">
         <p className="empty-state">Select a group to start chatting</p>
       </div>
     );
   }
 
   return (
-    <div className="group-chat-view">
-      <div className="group-metadata">
+    <div id="group-chat-wrapper">
+      <div id="group-chat-header">
         <h2>{group.name}</h2>
         <p>{group.description}</p>
-        <span className="group-meta-badge">{group.role || "General"} Group</span>
+        <span className="group-role-badge">{group.role || "General"} Group</span>
       </div>
 
-      <div className="messages-list">
-        {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            isOwn={msg.sender === user?.id}
+      <div id="group-chat-body">
+        <div id="group-chat-messages">
+          {messages.map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              isOwn={msg.sender === user?.id}
+            />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <TypingIndicator users={typingUsers} />
+
+        <div id="group-chat-input-wrapper">
+          <MessageInput
+            onSend={handleSendMessage}
+            onTyping={handleTyping}
+            groupId={group.id}
+            user={user}
           />
-        ))}
-        <div ref={messagesEndRef} />
+        </div>
       </div>
-
-      <TypingIndicator users={typingUsers} />
-
-      <MessageInput
-        onSend={handleSendMessage}
-        onTyping={handleTyping}
-        groupId={group.id}
-        user={user}
-      />
     </div>
   );
 }

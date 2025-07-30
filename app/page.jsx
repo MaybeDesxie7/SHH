@@ -58,16 +58,23 @@ export default function HomePage() {
   
   return (
     <>
+      <head>
+        <title>Glimo | All-in-One Hustle Platform for Modern Entrepreneurs</title>
+        <meta name="description" content="Glimo empowers digital hustlers with trending online income ideas, AI tools, and growth strategies to make money online in 2025." />
+        <meta name="keywords" content="Glimo, online hustle, make money online, digital tools, side hustle 2025, passive income, AI hustle, freelance, entrepreneurship, online business, Glimo tools" />
+      </head>
+
       <header id="header">
-        <div className="logo">Smart Hustle Hub</div>
+        <div className="logo">
+         <img src="/logo.png" alt="Glimo Logo" className="logo-image" />
+        </div>
+
         <nav id="nav-bar">
           <ul className={`nav-links ${navVisible ? 'show' : ''}`}>
             <li><a href="#home">Home</a></li>
-            <li><a href="#hustles">Courses</a></li>
-            <li><a href="#tools">Tools</a></li>
             <li><a href="#blog">Blog</a></li>
             <li><a href="#testimonials">Testimonials</a></li>
-            <li><a href="#footer">FAQ</a></li>
+            <li><a href="#footer">Help Center</a></li>
           </ul>
           <div className="menu-toggle" id="menu-toggle" onClick={() => setNavVisible(!navVisible)}>
             <i className="fas fa-bars"></i>
@@ -82,7 +89,7 @@ export default function HomePage() {
         </video>
 
         <div className="hero-content" data-aos="fade-up">
-          <h1>Welcome to Smart Hustle Hub</h1>
+          <h1>Welcome to Glimo</h1>
           <p>Your all-in-one platform to make money online with modern tools, trending ideas, and powerful resources.</p>
           <div className="auth-buttons">
             <a href="/login" className="btn login-btn">Login</a>
@@ -95,7 +102,7 @@ export default function HomePage() {
         <h2 data-aos="fade-up">🚀 Trending Side Hustles</h2>
         <p data-aos="fade-up" data-aos-delay="100">Explore top-performing online income streams to start today.</p>
         <div className="hustle-grid" data-aos="zoom-in" data-aos-delay="200">
-          {[
+          {[ 
             ['fas fa-bullhorn', 'Affiliate Marketing'],
             ['fas fa-pen-nib', 'Freelancing'],
             ['fas fa-poll', 'Online Surveys'],
@@ -117,7 +124,7 @@ export default function HomePage() {
       <section id="tools">
         <h2 data-aos="fade-down">Popular Tools</h2>
         <div className="tools-grid" data-aos="fade-right">
-          {[
+          {[ 
             ['fa-solid fa-pen-nib', 'Canva'],
             ['fa-brands fa-upwork', 'Upwork'],
             ['fa-solid fa-video', 'Pictory'],
@@ -141,7 +148,7 @@ export default function HomePage() {
         <h2 data-aos="fade-up">📝 Latest Blog Posts</h2>
         <p data-aos="fade-up" data-aos-delay="100">Stay informed with tips and guides from the digital world.</p>
         <div className="blog-grid" data-aos="fade-left" data-aos-delay="200">
-          {[
+          {[ 
             ['How to Start Affiliate Marketing in 2025', 'Learn step-by-step how to set up your affiliate empire from scratch using modern tools.'],
             ['Top Freelance Skills to Learn Now', 'These skills are in demand and can earn you clients globally with zero upfront cost.'],
             ['Best Tools for Content Creation', 'Use these powerful free and paid tools to supercharge your content game.'],
@@ -159,7 +166,7 @@ export default function HomePage() {
         <h2 data-aos="fade-up">💬 What Hustlers Are Saying</h2>
         <div className="testimonial-wrapper" data-aos="fade-up" data-aos-delay="100">
           <div className="testimonial-track">
-            {[
+            {[ 
               'This hub changed my life! I started freelancing and doubled my income in 3 months.',
               'The tools here are gold. Everything from setup to earning was made simple!',
               'Great platform for discovering side hustles. Clean, motivating, and actionable.',
@@ -218,7 +225,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="footer-bottom">
-          <p>© 2025 Smart Hustle Hub. All Rights Reserved.</p>
+          <p>© 2025 Glimo. All Rights Reserved.</p>
         </div>
       </footer>
     </>

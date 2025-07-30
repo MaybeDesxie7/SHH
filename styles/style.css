@@ -16,12 +16,25 @@ body, html {
   position: sticky;
   top: 0;
   z-index: 1000;
+  min-height: 90px; /* <- NEW */
 }
 
+
 .logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: limegreen;
+}
+
+.logo-image {
+  height: 80px;
+  width: auto;
+  max-width: 200px;
+  object-fit: cover;
+  display: block;
 }
 
 .nav-links {

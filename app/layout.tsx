@@ -7,8 +7,8 @@ import { ReactNode } from 'react';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'Smart Hustle Hub',
-  description: 'Make money online with Smart Hustle Hub',
+  title: 'Glimo',
+  description: 'Make money online with Glimo',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

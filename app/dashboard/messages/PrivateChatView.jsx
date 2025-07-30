@@ -17,13 +17,11 @@ export default function PrivateChatView({ recipient, user }) {
   const [file, setFile] = useState(null);
   const bottomRef = useRef(null);
 
-  // Generate stable private room ID
   const privateRoomId = React.useMemo(() => {
     if (!user?.id || !recipient?.user_id) return null;
     return [user.id, recipient.user_id].sort().join("_");
   }, [user, recipient]);
 
-  // ✅ Fetch private messages (sender/recipient combo)
   const fetchMessages = async () => {
     if (!user?.id || !recipient?.user_id) return;
 
@@ -47,7 +45,6 @@ export default function PrivateChatView({ recipient, user }) {
     if (!user || !recipient) return;
     fetchMessages();
 
-    // ✅ Real-time subscription for new private messages
     const subscription = supabase
       .channel(`private-chat-${privateRoomId}`)
       .on(
@@ -76,7 +73,6 @@ export default function PrivateChatView({ recipient, user }) {
     }, 100);
   };
 
-  // ✅ Send message
   const handleSend = async (content) => {
     if (!user || !recipient) return;
 
@@ -102,7 +98,11 @@ export default function PrivateChatView({ recipient, user }) {
         .getPublicUrl(fileName);
 
       fileUrl = urlData.publicUrl;
-      metadata = { file_url: fileUrl, file_name: file.name, file_type: file.type };
+      metadata = {
+        file_url: fileUrl,
+        file_name: file.name,
+        file_type: file.type,
+      };
 
       setUploading(false);
       setFile(null);
@@ -119,7 +119,6 @@ export default function PrivateChatView({ recipient, user }) {
     if (error) console.error("Error sending message:", error.message);
   };
 
-  // ✅ Typing indicator
   const handleTyping = async () => {
     if (!user || !privateRoomId) return;
     const { error } = await supabase.from("typing").upsert({
@@ -131,7 +130,6 @@ export default function PrivateChatView({ recipient, user }) {
     if (error) console.error("Typing indicator error:", error.message);
   };
 
-  // ✅ Pin & Star handlers
   const handlePin = async (id, isPinned) => {
     const { error } = await supabase
       .from("messages")
@@ -169,8 +167,16 @@ export default function PrivateChatView({ recipient, user }) {
   };
 
   return (
-    <div className="chat-view">
-      <div className="messages-container">
+    <div id="private-chat-container" className="private-chat-panel">
+      {/* Header */}
+      <div className="private-chat-header">
+        <h1 className="private-chat-username">
+          {recipient?.user_metadata?.name || recipient?.name || "Chat"}
+        </h1>
+      </div>
+
+      {/* Chat Messages */}
+      <div className="private-chat-messages">
         {messages.map((msg) => (
           <MessageBubble
             key={msg.id}
@@ -180,16 +186,22 @@ export default function PrivateChatView({ recipient, user }) {
             onStar={() => handleStar(msg.id, msg.is_starred)}
           />
         ))}
+        {typingUser && (
+          <TypingIndicator
+            username={typingUser}
+            className="private-chat-typing"
+          />
+        )}
         <div ref={bottomRef} />
       </div>
 
-      <TypingIndicator username={typingUser} />
-
+      {/* Input Area */}
       <MessageInput
         onSend={handleSend}
         onTyping={handleTyping}
         uploading={uploading}
         setFile={setFile}
+        className="private-chat-input"
       />
     </div>
   );
