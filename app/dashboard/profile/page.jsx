@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
+
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -147,7 +149,7 @@ export default function ProfilePage() {
     <div className="dashboard">
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-        <div className="logo">Smart Hustle Hub</div>
+        <div className="logo">Glimo</div>
         <nav>
           <ul>
             <li><a href="/dashboard" onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
@@ -221,9 +223,9 @@ export default function ProfilePage() {
         <section className="tools">
           <h2><i className="fas fa-clock"></i> Recent Activity</h2>
           <ul className="activity-feed">
-            <li><i className="fas fa-briefcase"></i> Added a new service: Web Design</li>
-            <li><i className="fas fa-envelope"></i> Replied to a client message</li>
-            <li><i className="fas fa-cogs"></i> Updated profile information</li>
+            <li><i className="fas fa-briefcase"></i></li>
+            <li><i className="fas fa-envelope"></i> </li>
+            <li><i className="fas fa-cogs"></i></li>
           </ul>
         </section>
       </main>

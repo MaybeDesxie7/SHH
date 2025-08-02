@@ -71,7 +71,7 @@ export default function SettingsPage() {
   return (
     <div className="dashboard">
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-        <div className="logo">Smart Hustle Hub</div>
+        <div className="logo">Glimo</div>
         <nav>
           <ul>
             <li>

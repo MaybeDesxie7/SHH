@@ -130,7 +130,7 @@ export default function HustleChallengesPage() {
  return (
     <div className="dashboard">
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-        <div className="logo">Smart Hustle Hub</div>
+        <div className="logo">Glimo</div>
         <nav>
           <ul>
             <li><a href="/dashboard" onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
@@ -170,7 +170,7 @@ export default function HustleChallengesPage() {
       <main className="main-content">
         <header>
           <div className="user-info">
-            <span>Hustle Challenges</span>
+            <span>Summoning the hustle codes...brace yourself 🏋️🔥</span>
             <span className="stars-display">⭐ {stars} Stars</span>
             <button
               onClick={() => setSidebarOpen((prev) => !prev)}

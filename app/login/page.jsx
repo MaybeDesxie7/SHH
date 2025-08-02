@@ -36,7 +36,7 @@ export default function LoginPage() {
     <div className="auth-container">
       <form className="auth-form" onSubmit={handleLogin}>
         <img src="/logo.png" alt="Logo" className="auth-logo" />
-        <h2>Login to Smart Hustle Hub</h2>
+        <h2>Login to Glimo</h2>
 
         {error && <p className="auth-error">{error}</p>}
 

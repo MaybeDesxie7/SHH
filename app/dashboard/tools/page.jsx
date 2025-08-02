@@ -79,7 +79,7 @@ export default function ToolsPage() {
     <div className="dashboard">
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-        <div className="logo">Smart Hustle Hub</div>
+        <div className="logo">Glimo</div>
         <nav>
           <ul>
             <li>
@@ -190,7 +190,7 @@ export default function ToolsPage() {
       <main className="main-content">
         <header>
           <div className="user-info">
-            <span>Tools</span>
+            <span>Sharpening your tools... avoid the rusty ones 🔧🛠️</span>
             <img src="https://i.pravatar.cc/100" alt="User Profile" />
             <button id="toggleModeBtn" title="Toggle Light/Dark Mode">
               <i className="fas fa-adjust"></i>

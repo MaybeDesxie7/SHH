@@ -1,146 +1,132 @@
-"use client";
-import React, { useEffect, useRef, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-import MessageBubble from "./MessageBubble";
-import TypingIndicator from "./TypingIndicator";
-import MessageInput from "./MessageInput";
+'use client';
+import React, { useEffect, useState, useRef } from 'react';
+import { supabase } from '@/lib/supabase';
+import MessageBubble from './MessageBubble';
+import MessageInput from './MessageInput';
+import TypingIndicator from './TypingIndicator';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
-export default function GroupChatView({ group, user }) {
+export default function GroupChatView({ groupId, groupDetails }) {
+  const [currentUser, setCurrentUser] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [typingUsers, setTypingUsers] = useState([]);
+  const [typingUser, setTypingUser] = useState(null);
   const messagesEndRef = useRef(null);
 
+  // ✅ Get current user from Supabase
   useEffect(() => {
-    if (!group?.id) return;
+    const getCurrentUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) setCurrentUser(data.user);
+    };
+    getCurrentUser();
+  }, []);
+
+  // ✅ Fetch group messages
+  useEffect(() => {
+    if (!groupId || !currentUser) return;
 
     const fetchMessages = async () => {
       const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("group_id", group.id)
-        .order("created_at", { ascending: true });
+        .from('messages')
+        .select('*')
+        .eq('group_id', groupId)
+        .order('created_at', { ascending: true });
 
-      if (!error) setMessages(data || []);
+      if (!error) setMessages(data);
     };
 
     fetchMessages();
+  }, [groupId, currentUser]);
 
-    const messageSub = supabase
-      .channel(`group-messages-${group.id}`)
+  // ✅ Scroll to bottom when messages update
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // ✅ Group typing indicator
+  useEffect(() => {
+    if (!groupId || !currentUser) return;
+
+    const typingChannel = supabase
+      .channel('group-typing')
       .on(
-        "postgres_changes",
+        'postgres_changes',
         {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `group_id=eq.${group.id}`
+          event: 'INSERT',
+          schema: 'public',
+          table: 'typing',
+          filter: `group_id=eq.${groupId}`,
         },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new]);
-          scrollToBottom();
+          if (payload.new.user_id !== currentUser.id) {
+            setTypingUser(payload.new.username);
+            setTimeout(() => setTypingUser(null), 3000);
+          }
         }
       )
       .subscribe();
 
-    const typingSub = supabase
-      .channel(`typing-${group.id}`)
-      .on("broadcast", { event: "typing" }, ({ payload }) => {
-        if (payload.user_id !== user?.id) {
-          setTypingUsers((prev) => {
-            if (!prev.includes(payload.name)) return [...prev, payload.name];
-            return prev;
-          });
-
-          setTimeout(() => {
-            setTypingUsers((prev) => prev.filter((u) => u !== payload.name));
-          }, 3000);
-        }
-      })
-      .subscribe();
-
     return () => {
-      supabase.removeChannel(messageSub);
-      supabase.removeChannel(typingSub);
+      supabase.removeChannel(typingChannel);
     };
-  }, [group, user]);
+  }, [groupId, currentUser]);
 
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSendMessage = async (text, fileUrl = null) => {
-    if (!user || !group) return;
-    await supabase.from("messages").insert({
-      content: text,
-      group_id: group.id,
-      sender: user.id,
-      type: fileUrl ? "file" : "text",
-      metadata: fileUrl ? { file_url: fileUrl } : null
-    });
-  };
-
+  // ✅ Send typing event
   const handleTyping = async () => {
-    if (!group || !user) return;
-    supabase.channel(`typing-${group.id}`).send({
-      type: "broadcast",
-      event: "typing",
-      payload: {
-        user_id: user.id,
-        name: user.user_metadata?.name || "User"
-      }
-    });
+    if (!currentUser) return;
+
+    await supabase.from('typing').insert([
+      {
+        group_id: groupId,
+        user_id: currentUser.id,
+        username:
+          currentUser.user_metadata?.display_name || currentUser.email,
+      },
+    ]);
   };
 
-  if (!group) {
-    return (
-      <div id="group-chat-wrapper">
-        <p className="empty-state">Select a group to start chatting</p>
-      </div>
-    );
-  }
+  // ✅ Send message
+  const handleSend = async (content) => {
+    if (!currentUser) return;
+
+    const { error } = await supabase.from('messages').insert([
+      {
+        group_id: groupId,
+        sender_id: currentUser.id,
+        content,
+      },
+    ]);
+
+    if (!error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          group_id: groupId,
+          sender_id: currentUser.id,
+          content,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+    }
+  };
+
+  if (!groupId) return <div>No group selected.</div>;
+  if (!currentUser) return <div>Loading user...</div>;
 
   return (
-    <div id="group-chat-wrapper">
-      <div id="group-chat-header">
-        <h2>{group.name}</h2>
-        <p>{group.description}</p>
-        <span className="group-role-badge">{group.role || "General"} Group</span>
-      </div>
-
-      <div id="group-chat-body">
-        <div id="group-chat-messages">
-          {messages.map((msg) => (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              isOwn={msg.sender === user?.id}
-            />
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        <TypingIndicator users={typingUsers} />
-
-        <div id="group-chat-input-wrapper">
-          <MessageInput
-            onSend={handleSendMessage}
-            onTyping={handleTyping}
-            groupId={group.id}
-            user={user}
+    <div className="msg-view-container">
+      <div className="msg-thread">
+        {messages.map((msg) => (
+          <MessageBubble
+            key={msg.id || msg.created_at}
+            message={msg}
+            isOwn={msg.sender_id === currentUser.id}
           />
-        </div>
+        ))}
+        <div ref={messagesEndRef} />
       </div>
+
+      {typingUser && <TypingIndicator username={typingUser} />}
+      <MessageInput onSend={handleSend} onTyping={handleTyping} />
     </div>
   );
 }

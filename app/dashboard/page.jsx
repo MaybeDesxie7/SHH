@@ -104,7 +104,7 @@ export default function DashboardPage() {
   return (
     <div className="dashboard">
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-        <div className="logo">Smart Hustle Hub</div>
+        <div className="logo">Glimo</div>
         <nav>
           <ul>
             <li><a href="/dashboard" className="active" onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
@@ -143,7 +143,7 @@ export default function DashboardPage() {
       <main className="main-content">
         <header>
           <div className="user-info">
-            <span>Welcome back, {profile?.name || user.user_metadata?.name || user.email}</span>
+            <span>The Community is here for you,{profile?.name || user.user_metadata?.name || user.email}</span>
             <img src={profile?.avatar || "https://i.pravatar.cc/100"} alt="User" />
             <button id="toggleMenuBtn" title="Toggle Menu" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <i className="fas fa-bars"></i>

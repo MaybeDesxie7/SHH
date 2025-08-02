@@ -60,12 +60,12 @@ export default function EbooksPage() {
 
   const topEbook = [...ebooks].sort((a, b) => b.rating - a.rating)[0];
 
-  if (!user) return <p>Loading...</p>;
+  if (!user) return <p>Just A sec...</p>;
 
   return (
       <div className="dashboard">
         <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-          <div className="logo">Smart Hustle Hub</div>
+          <div className="logo">Glimo</div>
           <nav>
             <ul>
               <li><a href="/dashboard" onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
@@ -104,7 +104,7 @@ export default function EbooksPage() {
       <main className="main-content">
         <header>
           <div className="user-info">
-            <span>Ebooks</span>
+            <span>Flipping virtual pages...finding juicy insights 📚💡</span>
             <img src="https://i.pravatar.cc/100" alt="User Profile" />
             <button id="toggleMenuBtn" title="Toggle Menu" onClick={toggleSidebar}>
               <i className="fas fa-bars"></i>

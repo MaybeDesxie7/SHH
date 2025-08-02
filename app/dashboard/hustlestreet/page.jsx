@@ -1,355 +1,204 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import OfferCard from './OfferCard';
+import TopUserCard from './TopUserCard';
+import FloatingActionButton from './FloatingActionButton';
+import TabsNavigator from './TabsNavigator';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-hot-toast';
+import '@/styles/hustlestreet.css';
 
 export default function HustleStreetPage() {
-  const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [offers, setOffers] = useState([]);
-  const [form, setForm] = useState({ title: '', description: '', type: '', stars_used: 0 });
-  const [filter, setFilter] = useState('all');
-  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('offers');
+  const [feed, setFeed] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [selectedOffer, setSelectedOffer] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [expandedCard, setExpandedCard] = useState(null);
-  const [topUsers, setTopUsers] = useState([]);
 
-  // Check screen size for sidebar behavior
-  useEffect(() => {
-    const checkScreenSize = () => {
-      const isWide = window.innerWidth >= 768;
-      setIsDesktop(isWide);
-      setSidebarOpen(isWide);
-    };
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
-
-  useEffect(() => {
-    async function getUser() {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) {
-        router.push('/login');
-        return;
-      }
-      setUser(data.user);
-      setLoading(false);
-    }
-    getUser();
-  }, [router]);
-
-  useEffect(() => {
-    if (user) {
-      fetchOffers();
-      fetchTopUsers();
-    }
-  }, [user]);
-
-  async function fetchOffers() {
+  // Fetch offers with join on profiles table (not public_profiles view)
+  const fetchOffers = async () => {
+    setLoading(true);
     const { data, error } = await supabase
       .from('hustle_offers')
-      .select('*')
-      .order('stars_used', { ascending: false })
+      .select(`
+        id,
+        title,
+        description,
+        tag,
+        stars_used,
+        created_at,
+        user_id,
+        profiles (
+          name,
+          avatar
+        )
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
-      toast.error('Failed to load offers');
-      console.error(error);
+      console.error('Error fetching offers:', error);
+      alert('Failed to load offers: ' + (error.message || JSON.stringify(error)));
+      setFeed([]);
     } else {
-      setOffers(data);
+      setFeed(data || []);
     }
-  }
+    setLoading(false);
+  };
 
-  async function fetchTopUsers() {
+  // Fetch top users via RPC
+  const fetchTopUsers = async () => {
+    setLoading(true);
     const { data, error } = await supabase.rpc('get_top_users');
     if (error) {
-      console.error('Failed to fetch top users', error);
-      toast.error('Error loading top users');
+      console.error('Error fetching top users:', error);
+      alert('Failed to load top users: ' + (error.message || JSON.stringify(error)));
+      setFeed([]);
     } else {
-      setTopUsers(data);
+      setFeed(data || []);
     }
-  }
+    setLoading(false);
+  };
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    if (name === 'stars_used') {
-      const val = parseInt(value, 10);
-      if (isNaN(val) || val < 0) return;
-      setForm(f => ({ ...f, [name]: val }));
-    } else {
-      setForm(f => ({ ...f, [name]: value }));
-    }
-  }
+  useEffect(() => {
+    if (activeTab === 'offers') fetchOffers();
+    else if (activeTab === 'top') fetchTopUsers();
+  }, [activeTab]);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.title || !form.description || !form.type) {
-      return toast.error('Please fill all fields');
-    }
-    if (typeof form.stars_used !== 'number' || form.stars_used < 0) {
-      return toast.error('Stars used must be ≥ 0');
+  // Real-time updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('offers')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'hustle_offers' },
+        () => {
+          if (activeTab === 'offers') fetchOffers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeTab]);
+
+  const handlePostOffer = async (newOffer) => {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      alert('You must be logged in to post offers.');
+      return;
     }
 
-    const { error } = await supabase.from('hustle_offers').insert({
-      ...form,
-      user_id: user.id
-    });
+    const { error } = await supabase
+      .from('hustle_offers')
+      .insert([{ ...newOffer, user_id: user.id }]);
 
     if (error) {
-      toast.error('Error posting offer');
-      console.error(error);
-    } else {
-      toast.success('Offer posted!');
-      setForm({ title: '', description: '', type: '', stars_used: 0 });
-      fetchOffers();
-      setExpandedCard(null);
+      console.error('Failed to post offer:', error);
+      alert(`Error posting offer: ${error.message || JSON.stringify(error)}`);
+      return;
     }
-  }
 
-  const filteredOffers = offers.filter(o => {
-    const matchesFilter = filter === 'all' || o.type === filter;
-    const searchText = search.toLowerCase();
-    return matchesFilter &&
-      (o.title.toLowerCase().includes(searchText) ||
-      o.description.toLowerCase().includes(searchText));
-  });
-
-  const myOffers = filteredOffers.filter(o => o.user_id === user.id);
-  const streetOffers = filteredOffers.filter(o => o.user_id !== user.id);
-
-  function openJoinModal(offer) {
-    setSelectedOffer(offer);
-    setShowModal(true);
-  }
-
-  function closeModal() {
+    if (activeTab === 'offers') fetchOffers();
     setShowModal(false);
-    setSelectedOffer(null);
-  }
-
-  function toggleCard(key) {
-    setExpandedCard(prev => prev === key ? null : key);
-  }
-
-  if (loading) return <p>Loading...</p>;
-
-  // Sidebar toggle and nav close on mobile
-  function toggleSidebar() {
-    setSidebarOpen(prev => !prev);
-  }
-
-  function handleNavClick() {
-    if (!isDesktop) setSidebarOpen(false);
-  }
+  };
 
   return (
-    <div className="dashboard">
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-        <div className="logo">Smart Hustle Hub</div>
-        <nav>
-          <ul>
-            <li><a href="/dashboard" onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="/dashboard/profile" onClick={handleNavClick}><i className="fas fa-user"></i> Profile</a></li>
-            <li><a href="/dashboard/hustlestreet" className="active" onClick={handleNavClick}><i className="fas fa-briefcase"></i> Hustle Street</a></li>
-            <li><a href="/dashboard/messages" onClick={handleNavClick}><i className="fas fa-envelope"></i> Messages</a></li>
-            <li><a href="/dashboard/tools" onClick={handleNavClick}><i className="fas fa-toolbox"></i> Tools</a></li>
-            <li><a href="/dashboard/ebooks" onClick={handleNavClick}><i className="fas fa-book"></i> Ebooks</a></li>
-            <li><a href="/dashboard/HustleChallenges" onClick={handleNavClick}><i className="fas fa-trophy"></i> Challenges</a></li>
-            <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
-            <li><a href="/dashboard/help_center" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
+    <div className="hustle-street-page">
+      <TabsNavigator
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        tabs={[
+          { key: 'offers', label: 'Offers Feed' },
+          { key: 'top', label: 'Top Creators' },
+          { key: 'form', label: 'Post Offer' },
+        ]}
+      />
 
-            {/* ✅ Premium link with Framer Motion pulse */}
-            <motion.li
-              style={{
-                background: "linear-gradient(90deg, #FFD700, #FFA500)",
-                borderRadius: "8px",
-                margin: "10px 0"
-              }}
-              animate={{
-                scale: [1, 1.05, 1],
-                opacity: [1, 0.9, 1]
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity
-              }}
-            >
-              <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
-                <i className="fas fa-crown"></i> Go Premium
-              </a>
-            </motion.li>
-
-            <li><a href="/dashboard/settings" onClick={handleNavClick}><i className="fas fa-cog"></i> Settings</a></li>
-            <li>
-              <button
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  router.push('/login');
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#ff4d4d',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '8px 16px'
-                }}
-              >
-                <i className="fas fa-sign-out-alt"></i> Logout
-              </button>
-            </li>
-          </ul>
-        </nav>
-      </aside>
-
-      {/* Main Content */}
-      <main className="main-content">
-        <header>
-          <div className="user-info">
-            <span>Hustle Street</span>
-            <img src="https://i.pravatar.cc/100" alt="User Profile" />
-            <button id="toggleModeBtn"><i className="fas fa-adjust" /></button>
-            <button id="toggleMenuBtn" onClick={toggleSidebar}>
-              <i className="fas fa-bars" />
-            </button>
-          </div>
-        </header>
-
-        {/* Collapsible Cards */}
-        <section className="shh-feature-cards">
-          {[
-            { name: 'My Offers', key: 'my' },
-            { name: 'Trending Offers', key: 'trending' },
-            { name: 'Top Users', key: 'top' },
-            { name: 'Post New Offer', key: 'form' },
-            { name: 'Street Offers', key: 'street' },
-          ].map(card => (
-            <motion.div key={card.key} className="shh-collapsible-card">
-              <div
-                className="shh-card-header"
-                onClick={() => toggleCard(card.key)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && toggleCard(card.key)}
-              >
-                <h3>{card.name}</h3>
-                <i className={`fas fa-chevron-${expandedCard === card.key ? 'up' : 'down'}`} />
-              </div>
-
-              <AnimatePresence>
-                {expandedCard === card.key && (
-                  <motion.div
-                    className="shh-card-content"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {/* === Content for each card === */}
-                    {card.key === 'top' && (
-                      topUsers.length === 0
-                        ? <p>No top users yet.</p>
-                        : (
-                          <ul className="top-users-list">
-                            {topUsers.map((u) => (
-                              <li key={u.user_id} className="user-card">
-                                {u.avatar ? (
-                                  <img src={u.avatar} alt={u.name} className="user-avatar" />
-                                ) : (
-                                  <div className="shh-avatar-fallback">{u.name?.[0]?.toUpperCase()}</div>
-                                )}
-                                <div className="user-details">
-                                  <p className="user-name">{u.name}</p>
-                                  <p><strong>⭐ Stars:</strong> {u.total_stars}</p>
-                                  <p><strong>🎯 Offers:</strong> {u.total_offers}</p>
-                                  <a href="/dashboard/messages" className="message-btn">Message</a>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        )
-                    )}
-
-                    {card.key === 'form' && (
-                      <form onSubmit={handleSubmit} className="shh-offer-form">
-                        <input type="text" name="title" placeholder="Title" value={form.title} onChange={handleChange} />
-                        <textarea name="description" placeholder="Description" value={form.description} onChange={handleChange} />
-                        <input type="text" name="type" placeholder="Type" value={form.type} onChange={handleChange} />
-                        <input type="number" name="stars_used" placeholder="Stars used" value={form.stars_used} onChange={handleChange} />
-                        <button type="submit">Post Offer</button>
-                      </form>
-                    )}
-
-                    {card.key === 'my' && (
-                      myOffers.length === 0
-                        ? <p>No offers yet.</p>
-                        : <ul className="shh-offer-list">
-                            {myOffers.map(o => (
-                              <li key={o.id} className="shh-offer-card">
-                                <h4>{o.title}</h4>
-                                <p>{o.description}</p>
-                                <span>⭐ {o.stars_used}</span>
-                              </li>
-                            ))}
-                          </ul>
-                    )}
-
-                    {card.key === 'street' && (
-                      streetOffers.length === 0
-                        ? <p>No community offers yet.</p>
-                        : <ul className="shh-offer-list">
-                            {streetOffers.map(o => (
-                              <li key={o.id} className="shh-offer-card">
-                                <h4>{o.title}</h4>
-                                <p>{o.description}</p>
-                                <button onClick={() => openJoinModal(o)}>Join</button>
-                              </li>
-                            ))}
-                          </ul>
-                    )}
-
-                    {card.key === 'trending' && (
-                      <ul className="shh-offer-list">
-                        {filteredOffers
-                          .filter(o => o.stars_used > 0)
-                          .slice(0, 5)
-                          .map(o => (
-                            <li key={o.id} className="shh-offer-card">
-                              <h4>{o.title}</h4>
-                              <p>{o.description}</p>
-                              <span>🔥 {o.stars_used} Stars</span>
-                            </li>
-                          ))}
-                      </ul>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          ))}
-        </section>
-
-        {showModal && selectedOffer && (
-          <div className="shh-modal">
-            <div className="shh-modal-content">
-              <h3>Join Offer: {selectedOffer.title}</h3>
-              <p>{selectedOffer.description}</p>
-              <button onClick={closeModal}>Close</button>
-            </div>
+      <div className="feed-content">
+        {loading ? (
+          <p className="loading">Loading...</p>
+        ) : activeTab === 'offers' ? (
+          feed.length > 0 ? (
+            feed.map((offer, index) => (
+              <OfferCard
+                key={offer.id ?? `offer-${index}`}
+                id={offer.id}
+                title={offer.title}
+                description={offer.description}
+                tag={offer.tag}
+                created_at={offer.created_at}
+                public_profiles={offer.profiles}
+                user_id={offer.user_id} // ✅ This was missing
+              />
+            ))
+          ) : (
+            <p>No offers found.</p>
+          )
+        ) : activeTab === 'top' ? (
+          feed.length > 0 ? (
+            feed.map((user, index) => (
+              <TopUserCard
+                key={user.user_id ?? `user-${index}`}
+                name={user.name}
+                avatar={user.avatar}
+                total_stars={user.total_stars}
+                total_votes={user.total_votes}
+                total_offers={user.total_offers}
+              />
+            ))
+          ) : (
+            <p>No top users found.</p>
+          )
+        ) : (
+          <div className="form-placeholder">
+            <p>Click the + button to post a new offer.</p>
           </div>
         )}
-      </main>
+      </div>
+
+      <FloatingActionButton onClick={() => setShowModal(true)} />
+
+      {showModal && (
+        <div className="modal-backdrop" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Post New Offer</h3>
+            <form
+              className="post-offer-form"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const title = formData.get('title');
+                const description = formData.get('description');
+                const tag = formData.get('tag');
+                const stars_used = parseInt(formData.get('stars_used'), 10) || 0;
+
+                if (!title || !description) {
+                  alert('Title and description are required.');
+                  return;
+                }
+
+                await handlePostOffer({ title, description, tag, stars_used });
+              }}
+            >
+              <input type="text" name="title" placeholder="Offer title" required />
+              <textarea name="description" placeholder="Describe your offer" required />
+              <input type="text" name="tag" placeholder="Tag (e.g. design, promo, collab)" />
+              <input
+                type="number"
+                name="stars_used"
+                placeholder="Stars used"
+                min="0"
+                defaultValue="0"
+              />
+              <button type="submit">Post Offer</button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

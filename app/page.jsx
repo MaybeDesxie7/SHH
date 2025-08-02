@@ -10,7 +10,6 @@ export default function HomePage() {
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   useEffect(() => {
-    // ✅ Inject public/style.css manually into <head>
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = '/style.css';
@@ -18,13 +17,15 @@ export default function HomePage() {
 
     AOS.init({ duration: 1200, once: true, easing: 'ease-in-out' });
 
-    // Smooth scrolling
     const links = document.querySelectorAll('.nav-links a');
     links.forEach(link => {
       link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const target = document.querySelector(link.getAttribute('href'));
-        if (target) target.scrollIntoView({ behavior: 'smooth' });
+        const href = link.getAttribute('href');
+        if (href && href.startsWith('#')) {
+          e.preventDefault();
+          const target = document.querySelector(href);
+          if (target) target.scrollIntoView({ behavior: 'smooth' });
+        }
       });
     });
 
@@ -38,7 +39,6 @@ export default function HomePage() {
       });
     }
 
-    // Cleanup
     return () => {
       document.head.removeChild(link);
     };
@@ -55,7 +55,7 @@ export default function HomePage() {
     alert('Thank you for subscribing!');
     e.target.reset();
   };
-  
+
   return (
     <>
       <head>
@@ -66,15 +66,15 @@ export default function HomePage() {
 
       <header id="header">
         <div className="logo">
-         <img src="/logo.png" alt="Glimo Logo" className="logo-image" />
+          <img src="/logo.png" alt="Glimo Logo" className="logo-image" />
         </div>
 
         <nav id="nav-bar">
           <ul className={`nav-links ${navVisible ? 'show' : ''}`}>
             <li><a href="#home">Home</a></li>
-            <li><a href="#blog">Blog</a></li>
+            <li><a href="/blog">Blog</a></li>
             <li><a href="#testimonials">Testimonials</a></li>
-            <li><a href="#footer">Help Center</a></li>
+            <li><a href="/dashboard/help_center">Help Center</a></li>
           </ul>
           <div className="menu-toggle" id="menu-toggle" onClick={() => setNavVisible(!navVisible)}>
             <i className="fas fa-bars"></i>
@@ -156,7 +156,7 @@ export default function HomePage() {
             <article className="blog-post" key={idx}>
               <h3>{title}</h3>
               <p>{desc}</p>
-              <a href="#" className="read-more">Read More <i className="fas fa-arrow-right"></i></a>
+              <a href="/blog" className="read-more">Read More <i className="fas fa-arrow-right"></i></a>
             </article>
           ))}
         </div>
@@ -203,14 +203,14 @@ export default function HomePage() {
               <li><a href="#home">Home</a></li>
               <li><a href="#hustles">Courses</a></li>
               <li><a href="#tools">Tools</a></li>
-              <li><a href="#blog">Blog</a></li>
+              <li><a href="/blog">Blog</a></li>
             </ul>
           </div>
           <div className="footer-column">
             <h4>Support</h4>
             <ul>
-              <li><a href="#">FAQ</a></li>
-              <li><a href="#">Contact Us</a></li>
+              <li><a href="/dashboard/help_center">Help Center</a></li>
+              <li><a href="#contact">Contact Us</a></li>
               <li><a href="#">Privacy Policy</a></li>
               <li><a href="#">Terms of Use</a></li>
             </ul>

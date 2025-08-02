@@ -1,208 +1,159 @@
-"use client";
-import React, { useEffect, useState, useRef } from "react";
-import MessageBubble from "./MessageBubble";
-import MessageInput from "./MessageInput";
-import TypingIndicator from "./TypingIndicator";
-import { createClient } from "@supabase/supabase-js";
+'use client';
+import React, { useEffect, useState, useRef } from 'react';
+import { supabase } from '@/lib/supabase';
+import MessageBubble from './MessageBubble';
+import MessageInput from './MessageInput';
+import TypingIndicator from './TypingIndicator';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
-export default function PrivateChatView({ recipient, user }) {
+export default function PrivateChatView({ chat }) {
+  const [currentUser, setCurrentUser] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [otherUser, setOtherUser] = useState(null);
   const [typingUser, setTypingUser] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [file, setFile] = useState(null);
-  const bottomRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
-  const privateRoomId = React.useMemo(() => {
-    if (!user?.id || !recipient?.user_id) return null;
-    return [user.id, recipient.user_id].sort().join("_");
-  }, [user, recipient]);
+  const myId = currentUser?.id;
+  const otherUserId = chat?.id;
 
-  const fetchMessages = async () => {
-    if (!user?.id || !recipient?.user_id) return;
-
-    const filterString = `and(sender.eq.${user.id},recipient.eq.${recipient.user_id}),and(sender.eq.${recipient.user_id},recipient.eq.${user.id})`;
-
-    const { data, error } = await supabase
-      .from("messages")
-      .select("*")
-      .or(filterString)
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching messages:", error.message);
-    } else {
-      setMessages(data);
-      scrollToBottom();
-    }
-  };
-
+  // ✅ Fetch current user
   useEffect(() => {
-    if (!user || !recipient) return;
-    fetchMessages();
+    const getCurrentUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) setCurrentUser(data.user);
+    };
+    getCurrentUser();
+  }, []);
 
-    const subscription = supabase
-      .channel(`private-chat-${privateRoomId}`)
+  // ✅ Fetch other user profile
+  useEffect(() => {
+    if (!otherUserId) return;
+    const fetchOtherUser = async () => {
+      const { data } = await supabase
+        .from('public_profiles')
+        .select('name, avatar')
+        .eq('user_id', otherUserId)
+        .single();
+      if (data) setOtherUser(data);
+    };
+    fetchOtherUser();
+  }, [otherUserId]);
+
+  // ✅ Fetch messages
+  useEffect(() => {
+    if (!myId || !otherUserId) return;
+    const fetchMessages = async () => {
+      const { data } = await supabase
+        .from('messages')
+        .select('*')
+        .or(
+          `and(sender_id.eq.${myId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${myId})`
+        )
+        .order('created_at', { ascending: true });
+      if (data) setMessages(data);
+    };
+    fetchMessages();
+  }, [myId, otherUserId]);
+
+  // ✅ Scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // ✅ Listen for typing
+  useEffect(() => {
+    if (!myId || !otherUserId) return;
+    const typingChannel = supabase
+      .channel('typing-channel')
       .on(
-        "postgres_changes",
+        'postgres_changes',
         {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `or(and(sender.eq.${user.id},recipient.eq.${recipient.user_id}),and(sender.eq.${recipient.user_id},recipient.eq.${user.id}))`,
+          event: 'INSERT',
+          schema: 'public',
+          table: 'typing',
+          filter: `chat_id=eq.${otherUserId}`,
         },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new]);
-          scrollToBottom();
+          if (payload.new.user_id !== myId) {
+            setTypingUser(payload.new.username);
+            setTimeout(() => setTypingUser(null), 3000);
+          }
         }
       )
       .subscribe();
+    return () => supabase.removeChannel(typingChannel);
+  }, [myId, otherUserId]);
 
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, [user, recipient, privateRoomId]);
-
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
+  const handleTyping = async () => {
+    await supabase.from('typing').insert([
+      {
+        chat_id: otherUserId,
+        user_id: myId,
+        username:
+          currentUser?.user_metadata?.display_name || currentUser?.email,
+      },
+    ]);
   };
 
   const handleSend = async (content) => {
-    if (!user || !recipient) return;
-
-    let fileUrl = null;
-    let metadata = null;
-
-    if (file) {
-      setUploading(true);
-
-      const fileName = `private/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("chat_uploads")
-        .upload(fileName, file);
-
-      if (uploadError) {
-        console.error("File upload error:", uploadError.message);
-        setUploading(false);
-        return;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from("chat_uploads")
-        .getPublicUrl(fileName);
-
-      fileUrl = urlData.publicUrl;
-      metadata = {
-        file_url: fileUrl,
-        file_name: file.name,
-        file_type: file.type,
-      };
-
-      setUploading(false);
-      setFile(null);
+    if (!content) return;
+    const { error } = await supabase.from('messages').insert([
+      {
+        sender_id: myId,
+        recipient_id: otherUserId,
+        content,
+      },
+    ]);
+    if (!error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender_id: myId,
+          recipient_id: otherUserId,
+          content,
+          created_at: new Date().toISOString(),
+        },
+      ]);
     }
-
-    const { error } = await supabase.from("messages").insert({
-      sender: user.id,
-      recipient: recipient.user_id,
-      content,
-      type: file ? "file" : "text",
-      metadata,
-    });
-
-    if (error) console.error("Error sending message:", error.message);
   };
 
-  const handleTyping = async () => {
-    if (!user || !privateRoomId) return;
-    const { error } = await supabase.from("typing").upsert({
-      channel_id: privateRoomId,
-      user_id: user.id,
-      name: user.user_metadata?.name || "Unknown",
-      last_typing_at: new Date().toISOString(),
-    });
-    if (error) console.error("Typing indicator error:", error.message);
-  };
-
-  const handlePin = async (id, isPinned) => {
-    const { error } = await supabase
-      .from("messages")
-      .update({ is_pinned: !isPinned })
-      .eq("id", id);
-    if (error) console.error("Pin message error:", error.message);
-  };
-
-  const handleStar = async (id, isStarred) => {
-    const { data: msgData, error: selectError } = await supabase
-      .from("messages")
-      .select("metadata")
-      .eq("id", id)
-      .single();
-
-    if (selectError) {
-      console.error("Error fetching message for starring:", selectError.message);
-      return;
-    }
-
-    const starredBy = msgData.metadata?.starred_by || [];
-    const newStarredBy = starredBy.includes(user.id)
-      ? starredBy.filter((uid) => uid !== user.id)
-      : [...starredBy, user.id];
-
-    const { error: updateError } = await supabase
-      .from("messages")
-      .update({
-        metadata: { ...msgData.metadata, starred_by: newStarredBy },
-        is_starred: newStarredBy.length > 0,
-      })
-      .eq("id", id);
-
-    if (updateError) console.error("Error updating star status:", updateError.message);
-  };
+  // ✅ Loading guards
+  if (!chat) return <div>No chat selected.</div>;
+  if (!currentUser) return <div>Loading user...</div>;
 
   return (
-    <div id="private-chat-container" className="private-chat-panel">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="private-chat-header">
-        <h1 className="private-chat-username">
-          {recipient?.user_metadata?.name || recipient?.name || "Chat"}
-        </h1>
+      <div className="msg-private-header flex items-center gap-2 p-2 border-b bg-white shadow-sm">
+        {otherUser?.avatar ? (
+          <img src={otherUser.avatar} className="msg-avatar" />
+        ) : (
+          <div className="msg-avatar msg-avatar-placeholder" />
+        )}
+        <span className="font-semibold">{otherUser?.name || 'User'}</span>
       </div>
 
-      {/* Chat Messages */}
-      <div className="private-chat-messages">
+      {/* Message area */}
+      <div className="flex-1 overflow-y-auto px-4 py-2 bg-[#f0f0f0]">
         {messages.map((msg) => (
           <MessageBubble
-            key={msg.id}
+            key={msg.id || msg.created_at}
             message={msg}
-            currentUser={user}
-            onPin={() => handlePin(msg.id, msg.is_pinned)}
-            onStar={() => handleStar(msg.id, msg.is_starred)}
+            isOwn={msg.sender_id === myId}
           />
         ))}
-        {typingUser && (
-          <TypingIndicator
-            username={typingUser}
-            className="private-chat-typing"
-          />
-        )}
-        <div ref={bottomRef} />
+        <div ref={messagesEndRef} />
+        {typingUser && <TypingIndicator username={typingUser} />}
       </div>
 
-      {/* Input Area */}
-      <MessageInput
-        onSend={handleSend}
-        onTyping={handleTyping}
-        uploading={uploading}
-        setFile={setFile}
-        className="private-chat-input"
-      />
+      {/* Input at bottom */}
+      <div className="border-t bg-white p-2">
+        <MessageInput
+          onSend={handleSend}
+          onTyping={handleTyping}
+          uploading={false}
+          setFile={() => {}}
+        />
+      </div>
     </div>
   );
 }

@@ -680,3 +680,66 @@ section p {
   margin: 1rem 0;
   color: #888;
 }
+.blog-container {
+  padding: 2rem;
+  max-width: 800px;
+  margin: auto;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.blog-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.blog-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.blog-header p {
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.blog-loading {
+  text-align: center;
+  color: #888;
+}
+
+.blog-posts {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.blog-card {
+  display: block;
+  padding: 1.5rem;
+  background: #fdfdfd;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  transition: all 0.2s ease-in-out;
+  text-decoration: none;
+  color: inherit;
+}
+
+.blog-card:hover {
+  border-color: #ddd;
+  background-color: #fafafa;
+  transform: translateY(-2px);
+}
+
+.blog-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.blog-snippet {
+  color: #444;
+  margin-bottom: 0.75rem;
+}
+
+.blog-date {
+  font-size: 0.875rem;
+  color: #999;
+}

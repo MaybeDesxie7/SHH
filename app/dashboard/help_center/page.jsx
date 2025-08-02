@@ -9,7 +9,7 @@ export default function HelpCenterPage() {
   const [user, setUser] = useState(null);
   const [faqs, setFaqs] = useState([]);
   const [openFAQ, setOpenFAQ] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Sidebar hidden by default on mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -42,56 +42,60 @@ export default function HelpCenterPage() {
   };
 
   const handleNavClick = () => {
-    if (window.innerWidth < 768) {
-      setSidebarOpen(false);
-    }
+    if (window.innerWidth < 768) setSidebarOpen(false);
   };
 
   if (!user) return <p>Loading...</p>;
 
   return (
-      <div className="dashboard">
-        <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-          <div className="logo">Smart Hustle Hub</div>
-          <nav>
-            <ul>
-              <li><a href="/dashboard" onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
-              <li><a href="/dashboard/profile" onClick={handleNavClick}><i className="fas fa-user"></i> Profile</a></li>
-              <li><a href="/dashboard/hustlestreet" onClick={handleNavClick}><i className="fas fa-briefcase"></i> Hustle Street</a></li>
-              <li><a href="/dashboard/messages" onClick={handleNavClick}><i className="fas fa-envelope"></i> Messages</a></li>
-              <li><a href="/dashboard/tools" onClick={handleNavClick}><i className="fas fa-toolbox"></i> Tools</a></li>
-              <li><a href="/dashboard/ebooks" onClick={handleNavClick}><i className="fas fa-book"></i> Ebooks</a></li>
-              <li><a href="/dashboard/HustleChallenges" onClick={handleNavClick}><i className="fas fa-trophy"></i>Challenges</a></li>
-              <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
-              <li><a href="/dashboard/help_center" className="active" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
-  
-              {/* Premium Link - Highlighted */}
-              <li style={{ background: "linear-gradient(90deg, #FFD700, #FFA500)", borderRadius: "8px", margin: "10px 0" }}>
-                <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
-                  <i className="fas fa-crown"></i> Go Premium
-                </a>
-              </li>
-  
-              <li><a href="/dashboard/settings" onClick={handleNavClick}><i className="fas fa-cog"></i> Settings</a></li>
-              <li>
-                <button
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    router.push('/login');
-                  }}
-                  style={{ background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 16px' }}
-                >
-                  <i className="fas fa-sign-out-alt"></i> Logout
-                </button>
-              </li>
-            </ul>
-          </nav>
-        </aside>
+    <div className="dashboard">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <div className="logo">Glimo</div>
+        <nav>
+          <ul>
+            <li><a href="/dashboard" onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/dashboard/profile" onClick={handleNavClick}><i className="fas fa-user"></i> Profile</a></li>
+            <li><a href="/dashboard/hustlestreet" onClick={handleNavClick}><i className="fas fa-briefcase"></i> Hustle Street</a></li>
+            <li><a href="/dashboard/messages" onClick={handleNavClick}><i className="fas fa-envelope"></i> Messages</a></li>
+            <li><a href="/dashboard/tools" onClick={handleNavClick}><i className="fas fa-toolbox"></i> Tools</a></li>
+            <li><a href="/dashboard/ebooks" onClick={handleNavClick}><i className="fas fa-book"></i> Ebooks</a></li>
+            <li><a href="/dashboard/HustleChallenges" onClick={handleNavClick}><i className="fas fa-trophy"></i> Challenges</a></li>
+            <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
+            <li><a href="/dashboard/help_center" className="active" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
+            <li style={{ background: "linear-gradient(90deg, #FFD700, #FFA500)", borderRadius: "8px", margin: "10px 0" }}>
+              <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
+                <i className="fas fa-crown"></i> Go Premium
+              </a>
+            </li>
+            <li><a href="/dashboard/settings" onClick={handleNavClick}><i className="fas fa-cog"></i> Settings</a></li>
+            <li>
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  router.push('/login');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#ff4d4d',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '8px 16px',
+                }}
+              >
+                <i className="fas fa-sign-out-alt"></i> Logout
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </aside>
 
       <main className="main-content">
         <header>
           <div className="user-info">
-            <span>Help Center</span>
+            <span>Reading FAQs like a detective... 🕵️‍♂️🔍</span>
             <img src="https://i.pravatar.cc/100" alt="User Profile" />
             <button id="toggleModeBtn"><i className="fas fa-adjust" /></button>
             <button id="toggleMenuBtn" onClick={toggleSidebar}>
