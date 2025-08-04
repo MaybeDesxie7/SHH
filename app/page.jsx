@@ -3,11 +3,17 @@
 import { useEffect, useState } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import '@/styles/style.css'; 
+import { supabase } from '@/lib/supabase';
+import '@/styles/style.css';
+import Head from 'next/head';
 
 export default function HomePage() {
   const [navVisible, setNavVisible] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [subscriberEmail, setSubscriberEmail] = useState('');
+  const [subscribeMessage, setSubscribeMessage] = useState('');
+  const [reviews, setReviews] = useState([]);
+  const [blogPosts, setBlogPosts] = useState([]); // <-- blog data
 
   useEffect(() => {
     const link = document.createElement('link');
@@ -39,6 +45,18 @@ export default function HomePage() {
       });
     }
 
+    const fetchBlogPosts = async () => {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('id, title, slug, snippet, cover_image')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (!error) setBlogPosts(data);
+    };
+
+    fetchBlogPosts();
+
     return () => {
       document.head.removeChild(link);
     };
@@ -46,23 +64,39 @@ export default function HomePage() {
 
   const handleReviewSubmit = (e) => {
     e.preventDefault();
+    const form = e.target;
+    const name = form.name.value;
+    const stars = parseInt(form.stars.value);
+    const comment = form.comment.value;
+
+    setReviews(prev => [...prev, { id: Date.now(), name, stars, comment }]);
     setReviewSubmitted(true);
-    e.target.reset();
+    form.reset();
   };
 
-  const handleSubscribeSubmit = (e) => {
+  const handleSubscribeSubmit = async (e) => {
     e.preventDefault();
-    alert('Thank you for subscribing!');
-    e.target.reset();
+    if (!subscriberEmail) return;
+
+    const { data, error } = await supabase
+      .from('newsletter_subscribers')
+      .insert([{ email: subscriberEmail }]);
+
+    if (error) {
+      setSubscribeMessage('Something went wrong or this email is already subscribed.');
+    } else {
+      setSubscribeMessage(`Thanks for subscribing, ${subscriberEmail}! 🎉`);
+      setSubscriberEmail('');
+    }
   };
 
   return (
     <>
-      <head>
+      <Head>
         <title>Glimo | All-in-One Hustle Platform for Modern Entrepreneurs</title>
         <meta name="description" content="Glimo empowers digital hustlers with trending online income ideas, AI tools, and growth strategies to make money online in 2025." />
         <meta name="keywords" content="Glimo, online hustle, make money online, digital tools, side hustle 2025, passive income, AI hustle, freelance, entrepreneurship, online business, Glimo tools" />
-      </head>
+      </Head>
 
       <header id="header">
         <div className="logo">
@@ -74,7 +108,7 @@ export default function HomePage() {
             <li><a href="#home">Home</a></li>
             <li><a href="/blog">Blog</a></li>
             <li><a href="#testimonials">Testimonials</a></li>
-            <li><a href="/dashboard/help_center">Help Center</a></li>
+            <li><a href="/faq">FAQ</a></li>
           </ul>
           <div className="menu-toggle" id="menu-toggle" onClick={() => setNavVisible(!navVisible)}>
             <i className="fas fa-bars"></i>
@@ -84,7 +118,7 @@ export default function HomePage() {
 
       <section id="home">
         <video autoPlay muted loop className="background-video">
-          <source src="/videos/mixkit-a-bunch-of-dollar-bills-background-47517-hd-ready.mp4" type="video/mp4" />
+          <source src="/money.mp4" type="video/mp4" />
           Your browser does not support HTML5 video.
         </video>
 
@@ -102,7 +136,7 @@ export default function HomePage() {
         <h2 data-aos="fade-up">🚀 Trending Side Hustles</h2>
         <p data-aos="fade-up" data-aos-delay="100">Explore top-performing online income streams to start today.</p>
         <div className="hustle-grid" data-aos="zoom-in" data-aos-delay="200">
-          {[ 
+          {[
             ['fas fa-bullhorn', 'Affiliate Marketing'],
             ['fas fa-pen-nib', 'Freelancing'],
             ['fas fa-poll', 'Online Surveys'],
@@ -112,6 +146,8 @@ export default function HomePage() {
             ['fas fa-robot', 'YouTube Automation'],
             ['fas fa-file-alt', 'Digital Products'],
             ['fas fa-share-alt', 'Social Media Management'],
+            ['fas fa-chart-line', 'Digital Marketing'],
+            ['fas fa-code', 'Developing'],
           ].map(([icon, text], idx) => (
             <div className="hustle-card" key={idx}>
               <i className={icon}></i>
@@ -124,18 +160,17 @@ export default function HomePage() {
       <section id="tools">
         <h2 data-aos="fade-down">Popular Tools</h2>
         <div className="tools-grid" data-aos="fade-right">
-          {[ 
+          {[
             ['fa-solid fa-pen-nib', 'Canva'],
             ['fa-brands fa-upwork', 'Upwork'],
             ['fa-solid fa-video', 'Pictory'],
-            ['fa-brands fa-fiverr', 'Fiverr'],
             ['fa-solid fa-lightbulb', 'Notion'],
             ['fa-brands fa-google', 'Google Docs'],
             ['fa-brands fa-youtube', 'YouTube Studio'],
             ['fa-solid fa-comments', 'ChatGPT'],
             ['fa-solid fa-chart-line', 'Semrush'],
             ['fa-solid fa-laptop-code', 'CodePen'],
-          ].map(([icon, text], idx) => (
+          ].map(([icon, text, link], idx) => (
             <div className="tool-card" key={idx}>
               <i className={icon}></i>
               <span>{text}</span>
@@ -148,15 +183,14 @@ export default function HomePage() {
         <h2 data-aos="fade-up">📝 Latest Blog Posts</h2>
         <p data-aos="fade-up" data-aos-delay="100">Stay informed with tips and guides from the digital world.</p>
         <div className="blog-grid" data-aos="fade-left" data-aos-delay="200">
-          {[ 
-            ['How to Start Affiliate Marketing in 2025', 'Learn step-by-step how to set up your affiliate empire from scratch using modern tools.'],
-            ['Top Freelance Skills to Learn Now', 'These skills are in demand and can earn you clients globally with zero upfront cost.'],
-            ['Best Tools for Content Creation', 'Use these powerful free and paid tools to supercharge your content game.'],
-          ].map(([title, desc], idx) => (
-            <article className="blog-post" key={idx}>
-              <h3>{title}</h3>
-              <p>{desc}</p>
-              <a href="/blog" className="read-more">Read More <i className="fas fa-arrow-right"></i></a>
+          {blogPosts.map((post) => (
+            <article className="blog-post" key={post.id}>
+              {post.cover_image && (
+                <img src={post.cover_image} alt={post.title} className="blog-thumbnail" />
+              )}
+              <h3>{post.title}</h3>
+              <p>{post.snippet}</p>
+              <a href={`/blog/${post.slug}`} className="read-more">Read More <i className="fas fa-arrow-right"></i></a>
             </article>
           ))}
         </div>
@@ -166,16 +200,13 @@ export default function HomePage() {
         <h2 data-aos="fade-up">💬 What Hustlers Are Saying</h2>
         <div className="testimonial-wrapper" data-aos="fade-up" data-aos-delay="100">
           <div className="testimonial-track">
-            {[ 
-              'This hub changed my life! I started freelancing and doubled my income in 3 months.',
-              'The tools here are gold. Everything from setup to earning was made simple!',
-              'Great platform for discovering side hustles. Clean, motivating, and actionable.',
-              'I never thought making money online could be this fun. Thanks to this site!',
-            ].map((quote, idx) => (
-              <div className="review-box" key={idx}>
-                <p className="stars">★★★★★</p>
-                <p>"{quote}"</p>
-                <p><strong>- Hustler #{idx + 1}</strong></p>
+            {reviews.map((review) => (
+              <div className="review-box" key={review.id}>
+                <p className="stars">
+                  {'★'.repeat(review.stars)}{'☆'.repeat(5 - review.stars)}
+                </p>
+                <p>"{review.comment}"</p>
+                <p><strong>- {review.name}</strong></p>
               </div>
             ))}
           </div>
@@ -185,7 +216,7 @@ export default function HomePage() {
           <h3>Leave a Review</h3>
           <form onSubmit={handleReviewSubmit}>
             <input type="text" name="name" placeholder="Your Name" required />
-            <input type="text" name="stars" placeholder="Rating (1-5)" required />
+            <input type="number" name="stars" placeholder="Rating (1-5)" min="1" max="5" required />
             <textarea name="comment" placeholder="Write your review..." required></textarea>
             <button type="submit">Submit Review</button>
           </form>
@@ -198,30 +229,30 @@ export default function HomePage() {
       <footer id="footer" data-aos="fade-up">
         <div className="footer-container">
           <div className="footer-column">
-            <h4>Explore</h4>
-            <ul>
-              <li><a href="#home">Home</a></li>
-              <li><a href="#hustles">Courses</a></li>
-              <li><a href="#tools">Tools</a></li>
-              <li><a href="/blog">Blog</a></li>
-            </ul>
-          </div>
-          <div className="footer-column">
             <h4>Support</h4>
             <ul>
-              <li><a href="/dashboard/help_center">Help Center</a></li>
-              <li><a href="#contact">Contact Us</a></li>
-              <li><a href="#">Privacy Policy</a></li>
-              <li><a href="#">Terms of Use</a></li>
+              <li><a href="/faq">FAQ</a></li>
+              <li><a href="/contact">Contact Us</a></li>
+              <li><a href="/privacy-policy">Privacy Policy</a></li>
+              <li><a href="/terms-of-use">Terms of Use</a></li>
             </ul>
           </div>
           <div className="footer-column">
             <h4>Join the Hustlers</h4>
             <p>Subscribe to our newsletter for weekly tips & tools.</p>
             <form className="subscribe-form" onSubmit={handleSubscribeSubmit}>
-              <input type="email" placeholder="Your Email" required />
+              <input
+                type="email"
+                placeholder="Your Email"
+                value={subscriberEmail}
+                onChange={(e) => setSubscriberEmail(e.target.value)}
+                required
+              />
               <button type="submit">Subscribe</button>
             </form>
+            {subscribeMessage && (
+              <p id="subscribeMessage">{subscribeMessage}</p>
+            )}
           </div>
         </div>
         <div className="footer-bottom">

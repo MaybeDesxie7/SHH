@@ -110,10 +110,10 @@ export default function HelpCenterPage() {
           {faqs.map((faq, index) => (
             <div key={faq.id} className="faq-item">
               <button className="faq-question" onClick={() => toggleFAQ(index)}>
-                {faq.title}
+                {faq.question}
               </button>
               {openFAQ === index && (
-                <p className="faq-answer">{faq.content}</p>
+                <p className="faq-answer">{faq.answer}</p>
               )}
             </div>
           ))}
