@@ -1,6 +1,8 @@
-'use client';
+"use client";
 
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { useState } from 'react';
 
 export default function OfferCard({
   id,
@@ -13,10 +15,29 @@ export default function OfferCard({
 }) {
   const { name, avatar } = public_profiles || {};
   const router = useRouter();
+  const [requesting, setRequesting] = useState(false);
 
   const handleReachOut = () => {
     if (!user_id) return alert('User not available');
     router.push(`/dashboard/messages?user=${user_id}`);
+  };
+
+  const handleRequestPartnership = async () => {
+    if (!user_id) return alert('User not available');
+    setRequesting(true);
+    const { error } = await supabase.from('partnership_requests').insert([
+      {
+        requester_id: (await supabase.auth.getUser()).data.user.id,
+        requested_id: user_id,
+        status: 'pending',
+      },
+    ]);
+    setRequesting(false);
+    if (error) {
+      alert('Failed to send request: ' + error.message);
+    } else {
+      alert('Partnership request sent!');
+    }
   };
 
   return (
@@ -44,6 +65,13 @@ export default function OfferCard({
       <div className="offer-footer">
         <button className="reach-out-button" onClick={handleReachOut}>
           💬 Reach Out
+        </button>
+        <button
+          className="reach-out-button"
+          onClick={handleRequestPartnership}
+          disabled={requesting}
+        >
+          🤝 Request Partnership
         </button>
       </div>
     </div>

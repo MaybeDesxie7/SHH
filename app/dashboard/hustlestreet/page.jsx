@@ -6,15 +6,37 @@ import TopUserCard from './TopUserCard';
 import FloatingActionButton from './FloatingActionButton';
 import TabsNavigator from './TabsNavigator';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
+import { FaCrown } from 'react-icons/fa';
 import '@/styles/hustlestreet.css';
 
 export default function HustleStreetPage() {
   const [activeTab, setActiveTab] = useState('offers');
-  const [feed, setFeed] = useState([]);
+  const [offersFeed, setOffersFeed] = useState([]);
+  const [topUsersFeed, setTopUsersFeed] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
-  // Fetch offers with join on profiles table (not public_profiles view)
+  const router = useRouter();
+
+  const isDesktop = typeof window !== 'undefined' ? window.innerWidth >= 1024 : false;
+
+  useEffect(() => {
+    setSidebarOpen(isDesktop);
+  }, [isDesktop]);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (data?.user) setCurrentUserId(data.user.id);
+      if (error) console.error('Error fetching user:', error);
+    };
+    getUser();
+  }, []);
+
   const fetchOffers = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -27,7 +49,7 @@ export default function HustleStreetPage() {
         stars_used,
         created_at,
         user_id,
-        profiles (
+        public_profiles (
           name,
           avatar
         )
@@ -36,34 +58,100 @@ export default function HustleStreetPage() {
 
     if (error) {
       console.error('Error fetching offers:', error);
-      alert('Failed to load offers: ' + (error.message || JSON.stringify(error)));
-      setFeed([]);
+      setOffersFeed([]);
     } else {
-      setFeed(data || []);
+      setOffersFeed(data || []);
     }
     setLoading(false);
   };
 
-  // Fetch top users via RPC
   const fetchTopUsers = async () => {
     setLoading(true);
     const { data, error } = await supabase.rpc('get_top_users');
     if (error) {
       console.error('Error fetching top users:', error);
-      alert('Failed to load top users: ' + (error.message || JSON.stringify(error)));
-      setFeed([]);
+      setTopUsersFeed([]);
     } else {
-      setFeed(data || []);
+      setTopUsersFeed(data || []);
     }
     setLoading(false);
+  };
+
+  const fetchRequests = async () => {
+    if (!currentUserId) return;
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from('partnership_requests')
+      .select(`
+        id,
+        sender_id,
+        receiver_id,
+        status
+      `)
+      .eq('receiver_id', currentUserId)
+      .eq('status', 'pending');
+
+    if (error) {
+      console.error('Failed to fetch requests:', error);
+      setRequests([]);
+      setLoading(false);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      setRequests([]);
+      setLoading(false);
+      return;
+    }
+
+    const senderIds = data.map((req) => req.sender_id);
+    const { data: senderProfiles, error: senderError } = await supabase
+      .from('public_profiles')
+      .select('user_id, name, avatar')
+      .in('user_id', senderIds);
+
+    if (senderError) {
+      console.error('Error fetching sender profiles:', senderError);
+      setRequests(data);
+      setLoading(false);
+      return;
+    }
+
+    const enrichedRequests = data.map((req) => {
+      const profile = senderProfiles.find((p) => p.user_id === req.sender_id);
+      return {
+        ...req,
+        sender: profile || null,
+      };
+    });
+
+    setRequests(enrichedRequests);
+    setLoading(false);
+  };
+
+  const handleAccept = async (id) => {
+    const { error } = await supabase
+      .from('partnership_requests')
+      .update({ status: 'accepted' })
+      .eq('id', id);
+    if (!error) fetchRequests();
+  };
+
+  const handleReject = async (id) => {
+    const { error } = await supabase
+      .from('partnership_requests')
+      .delete()
+      .eq('id', id);
+    if (!error) fetchRequests();
   };
 
   useEffect(() => {
     if (activeTab === 'offers') fetchOffers();
     else if (activeTab === 'top') fetchTopUsers();
-  }, [activeTab]);
+    else if (activeTab === 'requests') fetchRequests();
+  }, [activeTab, currentUserId]);
 
-  // Real-time updates
   useEffect(() => {
     const channel = supabase
       .channel('offers')
@@ -98,7 +186,7 @@ export default function HustleStreetPage() {
 
     if (error) {
       console.error('Failed to post offer:', error);
-      alert(`Error posting offer: ${error.message || JSON.stringify(error)}`);
+      alert(`Error posting offer: ${error.message}`);
       return;
     }
 
@@ -106,99 +194,154 @@ export default function HustleStreetPage() {
     setShowModal(false);
   };
 
-  return (
-    <div className="hustle-street-page">
-      <TabsNavigator
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        tabs={[
-          { key: 'offers', label: 'Offers Feed' },
-          { key: 'top', label: 'Top Creators' },
-          { key: 'form', label: 'Post Offer' },
-        ]}
-      />
+  function handleNavClick() {
+    if (!isDesktop) setSidebarOpen(false);
+  }
 
-      <div className="feed-content">
-        {loading ? (
-          <p className="loading">Loading...</p>
-        ) : activeTab === 'offers' ? (
-          feed.length > 0 ? (
-            feed.map((offer, index) => (
-              <OfferCard
-                key={offer.id ?? `offer-${index}`}
-                id={offer.id}
-                title={offer.title}
-                description={offer.description}
-                tag={offer.tag}
-                created_at={offer.created_at}
-                public_profiles={offer.profiles}
-                user_id={offer.user_id} // ✅ This was missing
-              />
-            ))
+  return (
+    <div className="dashboard hustle-street-page">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <div className="logo">Glimo</div>
+        <nav>
+          <ul>
+            <li><a href="/dashboard"onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/dashboard/profile" onClick={handleNavClick}><i className="fas fa-user"></i> Profile</a></li>
+            <li><a href="/dashboard/hustlestreet" className="active" onClick={handleNavClick}><i className="fas fa-briefcase"></i> Hustle Street</a></li>
+            <li><a href="/dashboard/messages" onClick={handleNavClick}><i className="fas fa-envelope"></i> Messages</a></li>
+            <li><a href="/dashboard/tools" onClick={handleNavClick}><i className="fas fa-toolbox"></i> Tools</a></li>
+            <li><a href="/dashboard/ebooks" onClick={handleNavClick}><i className="fas fa-book"></i> Ebooks</a></li>
+            <li><a href="/dashboard/hustlechallenges" onClick={handleNavClick}><i className="fas fa-trophy"></i> Challenges</a></li>
+            <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
+            <li><a href="/dashboard/help_center" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
+            <li style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)', borderRadius: '8px', margin: '10px 0' }}>
+              <a href="/dashboard/premium" onClick={handleNavClick} style={{ color: '#fff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <FaCrown /> Go Premium
+              </a>
+            </li>
+            <li>
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  router.push('/login');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#ff4d4d',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '8px 16px',
+                }}
+              >
+                <i className="fas fa-sign-out-alt"></i> Logout
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main className="main-content">
+        <header>
+          <div className="user-info">
+            <span>Deals & Offers</span>
+            <img src="https://i.pravatar.cc/100" alt="User Profile" />
+            <button id="toggleModeBtn"><i className="fas fa-adjust" /></button>
+            <button id="toggleMenuBtn" onClick={() => setSidebarOpen((prev) => !prev)}><i className="fas fa-bars" /></button>
+          </div>
+        </header>
+
+        <TabsNavigator
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          tabs={[
+            { key: 'offers', label: 'Offers Feed' },
+            { key: 'top', label: 'Top Creators' },
+            { key: 'requests', label: 'Hustle Requests' },
+            { key: 'form', label: 'Post Offer' },
+          ]}
+        />
+
+        <div className="feed-content">
+          {loading ? (
+            <p className="loading">Loading...</p>
+          ) : activeTab === 'offers' ? (
+            offersFeed.length > 0 ? (
+              offersFeed.map((offer) => (
+                <OfferCard
+                  key={offer.id}
+                  {...offer}
+                  public_profiles={offer.public_profiles || { name: 'Unknown', avatar: null }}
+                />
+              ))
+            ) : (
+              <p>No offers found.</p>
+            )
+          ) : activeTab === 'top' ? (
+            topUsersFeed.length > 0 ? (
+              topUsersFeed.map((user) => (
+                <TopUserCard key={user.user_id} {...user} />
+              ))
+            ) : (
+              <p>No top users found.</p>
+            )
+          ) : activeTab === 'requests' ? (
+            requests.length > 0 ? (
+              requests.map((req) => (
+                <div key={req.id} className="request-card">
+                  <img src={req.sender?.avatar || '/default-avatar.png'} alt="avatar" className="avatar" />
+                  <span>{req.sender?.name || 'Anonymous'}</span>
+                  <div className="request-actions">
+                    <button onClick={() => handleAccept(req.id)}>Accept</button>
+                    <button onClick={() => handleReject(req.id)}>Reject</button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No pending requests.</p>
+            )
           ) : (
-            <p>No offers found.</p>
-          )
-        ) : activeTab === 'top' ? (
-          feed.length > 0 ? (
-            feed.map((user, index) => (
-              <TopUserCard
-                key={user.user_id ?? `user-${index}`}
-                name={user.name}
-                avatar={user.avatar}
-                total_stars={user.total_stars}
-                total_votes={user.total_votes}
-                total_offers={user.total_offers}
-              />
-            ))
-          ) : (
-            <p>No top users found.</p>
-          )
-        ) : (
-          <div className="form-placeholder">
-            <p>Click the + button to post a new offer.</p>
+            <div className="form-placeholder">
+              <p>Click the + button to post a new offer.</p>
+            </div>
+          )}
+        </div>
+
+        <FloatingActionButton onClick={() => setShowModal(true)} />
+
+        {showModal && (
+          <div className="modal-backdrop" onClick={() => setShowModal(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <h3>Post New Offer</h3>
+              <form
+                className="post-offer-form"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.target);
+                  const title = formData.get('title');
+                  const description = formData.get('description');
+                  const tag = formData.get('tag');
+                  const stars_used = parseInt(formData.get('stars_used'), 10) || 0;
+
+                  if (!title || !description) {
+                    alert('Title and description are required.');
+                    return;
+                  }
+
+                  await handlePostOffer({ title, description, tag, stars_used });
+                }}
+              >
+                <input type="text" name="title" placeholder="Offer title" required />
+                <textarea name="description" placeholder="Describe your offer" required />
+                <input type="text" name="tag" placeholder="Tag (e.g. design, promo, collab)" />
+                <input type="number" name="stars_used" placeholder="Stars used" min="0" defaultValue="0" />
+                <button type="submit">Post Offer</button>
+              </form>
+            </div>
           </div>
         )}
-      </div>
-
-      <FloatingActionButton onClick={() => setShowModal(true)} />
-
-      {showModal && (
-        <div className="modal-backdrop" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Post New Offer</h3>
-            <form
-              className="post-offer-form"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const title = formData.get('title');
-                const description = formData.get('description');
-                const tag = formData.get('tag');
-                const stars_used = parseInt(formData.get('stars_used'), 10) || 0;
-
-                if (!title || !description) {
-                  alert('Title and description are required.');
-                  return;
-                }
-
-                await handlePostOffer({ title, description, tag, stars_used });
-              }}
-            >
-              <input type="text" name="title" placeholder="Offer title" required />
-              <textarea name="description" placeholder="Describe your offer" required />
-              <input type="text" name="tag" placeholder="Tag (e.g. design, promo, collab)" />
-              <input
-                type="number"
-                name="stars_used"
-                placeholder="Stars used"
-                min="0"
-                defaultValue="0"
-              />
-              <button type="submit">Post Offer</button>
-            </form>
-          </div>
-        </div>
-      )}
+      </main>
     </div>
   );
 }

@@ -106,7 +106,7 @@ export default function HomePage() {
         <nav id="nav-bar">
           <ul className={`nav-links ${navVisible ? 'show' : ''}`}>
             <li><a href="#home">Home</a></li>
-            <li><a href="/blog">Blog</a></li>
+            {/*<li><a href="/blog">Blog</a></li>*/}
             <li><a href="#testimonials">Testimonials</a></li>
             <li><a href="/faq">FAQ</a></li>
           </ul>
@@ -179,7 +179,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="blog">
+      {/*<section id="blog">
         <h2 data-aos="fade-up">📝 Latest Blog Posts</h2>
         <p data-aos="fade-up" data-aos-delay="100">Stay informed with tips and guides from the digital world.</p>
         <div className="blog-grid" data-aos="fade-left" data-aos-delay="200">
@@ -194,7 +194,7 @@ export default function HomePage() {
             </article>
           ))}
         </div>
-      </section>
+      </section>*/}
 
       <section id="testimonials">
         <h2 data-aos="fade-up">💬 What Hustlers Are Saying</h2>

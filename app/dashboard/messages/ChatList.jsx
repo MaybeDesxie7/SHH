@@ -1,22 +1,19 @@
-'use client';
-import React from 'react';
-import ChatItem from './ChatItem';
+import React, { useEffect, useState } from 'react';
 
-const ChatList = ({ chats = [], selectedChatId, onSelectChat }) => {
+export default function ChatList({ onSelectChat }) {
+  const [chats, setChats] = useState([]);
+
+  useEffect(() => {
+    // Fetch chats from Supabase
+  }, []);
+
   return (
-    <div className="msg-chat-list">
-      {chats.map((chat) => (
-        <ChatItem
-          key={chat.id}
-          name={chat.name}
-          lastMessage={chat.lastMessage}
-          timestamp={chat.timestamp}
-          isActive={selectedChatId === chat.id}
-          onClick={() => onSelectChat(chat)}
-        />
+    <div className="chat-list">
+      {chats.map(chat => (
+        <div key={chat.id} className="chat-item" onClick={() => onSelectChat(chat)}>
+          <p>{chat.name}</p>
+        </div>
       ))}
     </div>
   );
-};
-
-export default ChatList;
+}

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,22 +9,30 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer
 } from "recharts";
 import {
-  FaChartBar, FaCalendarAlt, FaMagic, FaUserPlus, FaStar, FaHistory, FaCrown
+  FaChartBar,
+  FaCalendarAlt,
+  FaMagic,
+  FaUserPlus,
+  FaStar,
+  FaHistory,
+  FaCrown,
+  FaHandshake,
+  FaTags
 } from "react-icons/fa";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [messagesCount, setMessagesCount] = useState(0);
-  const [clientsCount, setClientsCount] = useState(0);
+  const [hustlePalsCount, setHustlePalsCount] = useState(0); // replaced clientsCount
   const [starsRemaining, setStarsRemaining] = useState(0);
   const [aiAdvice, setAiAdvice] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [starUsage, setStarUsage] = useState([]);
   const [engagements, setEngagements] = useState([]);
-  const [schedule, setSchedule] = useState([]);
-  const [growth, setGrowth] = useState([]);
+  const [offersFeed, setOffersFeed] = useState([]); // from HustleStreet for collapsible section
+
   const [customTitle, setCustomTitle] = useState("");
   const [customDescription, setCustomDescription] = useState("");
 
@@ -44,30 +52,52 @@ export default function DashboardPage() {
       setProfile(profileData);
       setStarsRemaining(starData?.stars_remaining || 0);
 
+      // Count pending accepted partnership requests as Hustle Pals
+      const { data: palsData, error: palsError } = await supabase
+        .from("partnership_requests")
+        .select("id", { count: "exact", head: true })
+        .or(`sender_id.eq.${userData.user.id},receiver_id.eq.${userData.user.id}`)
+        .eq("status", "accepted");
+
+      if (palsError) {
+        console.error("Error fetching Hustle Pals:", palsError);
+        setHustlePalsCount(0);
+      } else {
+        setHustlePalsCount(palsData?.length || 0);
+      }
+
       const { count: msgCount } = await supabase
         .from("messages")
         .select("*", { count: "exact", head: true })
         .eq("receiver", userData.user.email);
 
-      const { count: clCount } = await supabase
-        .from("messages")
-        .select("sender", { count: "exact", head: true })
-        .neq("sender", userData.user.email);
-
       setMessagesCount(msgCount || 0);
-      setClientsCount(clCount || 0);
 
+      // Fetch latest offers for the collapsible section
+      const { data: offersData, error: offersError } = await supabase
+        .from("hustle_offers")
+        .select("id,title")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (offersError) {
+        console.error("Error fetching offers:", offersError);
+        setOffersFeed([]);
+      } else {
+        setOffersFeed(offersData || []);
+      }
+
+      // Example star usage data
       setStarUsage([
         { name: "Posts", value: 5 },
         { name: "Boosts", value: 3 },
         { name: "Messages", value: 2 },
       ]);
-      setEngagements(["Jane joined your promo", "Alex responded to your offer"]);
-      setSchedule(["Cross-promo with Zara - Jul 25", "Collab launch - Jul 27"]);
-      setGrowth([
-        { date: "Jul 1", count: 100 },
-        { date: "Jul 15", count: 140 },
-        { date: "Jul 23", count: 180 },
+
+      // Example engagements (you can replace with real data)
+      setEngagements([
+        "Jane joined your promo",
+        "Alex responded to your offer",
       ]);
     };
     init();
@@ -113,14 +143,14 @@ export default function DashboardPage() {
             <li><a href="/dashboard/messages" onClick={handleNavClick}><i className="fas fa-envelope"></i> Messages</a></li>
             <li><a href="/dashboard/tools" onClick={handleNavClick}><i className="fas fa-toolbox"></i> Tools</a></li>
             <li><a href="/dashboard/ebooks" onClick={handleNavClick}><i className="fas fa-book"></i> Ebooks</a></li>
-            <li><a href="/dashboard/HustleChallenges" onClick={handleNavClick}><i className="fas fa-trophy"></i>Challenges</a></li>
+            <li><a href="/dashboard/hustlechallenges" onClick={handleNavClick}><i className="fas fa-trophy"></i> Challenges</a></li>
             <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
             <li><a href="/dashboard/help_center" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
 
             {/* Premium Link - Highlighted */}
             <li style={{ background: "linear-gradient(90deg, #FFD700, #FFA500)", borderRadius: "8px", margin: "10px 0" }}>
-              <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
-                <i className="fas fa-crown"></i> Go Premium
+              <a href="/dashboard/premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
+                <FaCrown /> Go Premium
               </a>
             </li>
 
@@ -143,7 +173,7 @@ export default function DashboardPage() {
       <main className="main-content">
         <header>
           <div className="user-info">
-            <span>The Community is here for you,{profile?.name || user.user_metadata?.name || user.email}</span>
+            <span>The Community is here for you, {profile?.name || user.user_metadata?.name || user.email}</span>
             <img src={profile?.avatar || "https://i.pravatar.cc/100"} alt="User" />
             <button id="toggleMenuBtn" title="Toggle Menu" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <i className="fas fa-bars"></i>
@@ -154,9 +184,9 @@ export default function DashboardPage() {
         {/* Overview Cards */}
         <section className="overview">
           <div className="stats-grid">
-            <div className="card"><i className="fas fa-users"></i><h3>Clients</h3><p>{clientsCount}</p></div>
+            <div className="card"><FaHandshake /><h3>Hustle Pals</h3><p>{hustlePalsCount}</p></div>
             <div className="card"><i className="fas fa-envelope"></i><h3>Messages</h3><p>{messagesCount}</p></div>
-            <div className="card star-card"><i className="fas fa-star"></i><h3>Stars</h3><p>{starsRemaining} ⭐</p></div>
+            <div className="card star-card"><FaStar /><h3>Stars</h3><p>{starsRemaining} ⭐</p></div>
           </div>
         </section>
 
@@ -185,7 +215,7 @@ export default function DashboardPage() {
             <FaCrown /> Upgrade to Premium
           </motion.h2>
           <p style={{ marginTop: "10px", fontSize: "16px" }}>Unlock exclusive perks, double rewards, and more!</p>
-          <a href="/dashboard/Premium">
+          <a href="/dashboard/premium">
             <motion.button
               style={{
                 background: "#fff",
@@ -217,41 +247,19 @@ export default function DashboardPage() {
         {/* Collapsible Sections */}
         <section className="collapsible">
           <details>
-            <summary><FaHistory /> Star Usage History</summary>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={starUsage} dataKey="value" nameKey="name" outerRadius={80}>
-                  {starUsage.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={["#8884d8", "#82ca9d", "#ffc658"][index % 3]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <summary><FaTags /> Latest Offers</summary>
+            <ul>
+              {offersFeed.length > 0 ? (
+                offersFeed.map((offer) => <li key={offer.id}>{offer.title}</li>)
+              ) : (
+                <li>No offers found.</li>
+              )}
+            </ul>
           </details>
 
           <details>
             <summary><FaChartBar /> Recent Hustle Engagements</summary>
             <ul>{engagements.map((e, i) => <li key={i}>{e}</li>)}</ul>
-          </details>
-
-          <details>
-            <summary><FaCalendarAlt /> Freelancer Schedule</summary>
-            <ul>{schedule.map((item, i) => <li key={i}>{item}</li>)}</ul>
-          </details>
-
-          <details>
-            <summary><FaMagic /> Custom Offer Generator</summary>
-            <input type="text" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} placeholder="Title" />
-            <textarea value={customDescription} onChange={(e) => setCustomDescription(e.target.value)} placeholder="Description" />
-            <button onClick={generateOffer}>Generate Offer</button>
-            {customTitle && <p><strong>{customTitle}</strong></p>}
-            {customDescription && <p>{customDescription}</p>}
-          </details>
-
-          <details>
-            <summary><FaUserPlus /> Follower/Contact Growth</summary>
-            <ul>{growth.map((g, i) => <li key={i}>{g.date}: {g.count} followers</li>)}</ul>
           </details>
         </section>
       </main>

@@ -1,127 +1,55 @@
-'use client';
-import React, { useEffect, useState } from 'react';
-import ChatList from './ChatList';
-import { supabase } from '@/lib/supabase';
+// app/dashboard/messages/ChatSidebar.jsx
+"use client";
 
-const ChatSidebar = ({ selectedTab, setSelectedTab, setActiveChat, activeChat, isMobile }) => {
-  const [search, setSearch] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+
+export default function ChatSidebar({ onSelectChat, selectedChat }) {
   const [chats, setChats] = useState([]);
-  const [groups, setGroups] = useState([]);
 
-  // Fetch public profiles for search
   useEffect(() => {
-    const fetchProfiles = async () => {
-      if (search.length < 2) {
-        setSearchResults([]);
-        return;
-      }
+    const fetchChats = async () => {
+      const user = await supabase.auth.getUser();
+      if (!user.data?.user) return;
 
       const { data, error } = await supabase
-        .from('public_profiles')
-        .select('user_id, name, avatar')
-        .ilike('name', `%${search}%`);
+        .from("messages")
+        .select("id, sender_id, recipient_id, profiles!messages_sender_id_fkey(username, avatar_url)")
+        .or(`sender_id.eq.${user.data.user.id},recipient_id.eq.${user.data.user.id}`)
+        .order("created_at", { ascending: false });
 
-      if (!error) {
-        setSearchResults(data);
+      if (!error && data) {
+        const uniqueChats = Array.from(
+          new Map(
+            data.map((msg) => {
+              const otherUser = msg.sender_id === user.data.user.id ? msg.recipient_id : msg.sender_id;
+              return [otherUser, msg];
+            })
+          ).values()
+        );
+        setChats(uniqueChats);
       }
     };
 
-    fetchProfiles();
-  }, [search]);
-
-  // Fetch user groups from memberships
-  useEffect(() => {
-    const fetchGroups = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) return;
-
-      const { data, error } = await supabase
-        .from('group_members')
-        .select('group_chats(id, name)')
-        .eq('user_id', userData.user.id);
-
-      if (!error) {
-        const formatted = data.map(item => ({
-          id: item.group_chats.id,
-          name: item.group_chats.name,
-          type: 'group',
-        }));
-        setGroups(formatted);
-      }
-    };
-
-    if (selectedTab === 'groups') fetchGroups();
-  }, [selectedTab]);
-
-  // Placeholder for private chats
-  useEffect(() => {
-    setChats([]); // Replace with real recent chat fetch if needed
+    fetchChats();
   }, []);
 
-  const handleSelectChat = (chat) => {
-    setActiveChat(chat);
-    if (isMobile) {
-      // Auto-close sidebar on mobile
-      document.body.click(); // trigger outside click listener
-    }
-  };
-
   return (
-    <div className="msg-chat-sidebar">
-      <div className="msg-sidebar-header">
-        <input
-          type="text"
-          className="msg-search-input"
-          placeholder="Search users..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <div className="msg-tab-toggle">
-          <button
-            className={selectedTab === 'chats' ? 'active' : ''}
-            onClick={() => setSelectedTab('chats')}
+    <div className="chat-sidebar">
+      <h2>Messages</h2>
+      {chats.map((chat) => {
+        const chatPartner = chat.profiles;
+        return (
+          <div
+            key={chat.id}
+            className={`chat-list-item ${selectedChat?.id === chat.id ? "active" : ""}`}
+            onClick={() => onSelectChat(chat)}
           >
-            Chats
-          </button>
-          <button
-            className={selectedTab === 'groups' ? 'active' : ''}
-            onClick={() => setSelectedTab('groups')}
-          >
-            Groups
-          </button>
-        </div>
-      </div>
-
-      {search.length >= 2 ? (
-        <ChatList
-          chats={searchResults
-            .filter(u => u.user_id && u.name)
-            .map((u) => ({
-              id: u.user_id,
-              name: u.name,
-              avatar: u.avatar || '',
-              type: 'private',
-            }))
-          }
-          selectedChatId={activeChat?.id}
-          onSelectChat={handleSelectChat}
-        />
-      ) : selectedTab === 'groups' ? (
-        <ChatList
-          chats={groups}
-          selectedChatId={activeChat?.id}
-          onSelectChat={handleSelectChat}
-        />
-      ) : (
-        <ChatList
-          chats={chats}
-          selectedChatId={activeChat?.id}
-          onSelectChat={handleSelectChat}
-        />
-      )}
+            <img src={chatPartner.avatar_url} alt="avatar" className="chat-avatar" />
+            <span>{chatPartner.username}</span>
+          </div>
+        );
+      })}
     </div>
   );
-};
-
-export default ChatSidebar;
+}

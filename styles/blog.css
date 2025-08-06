@@ -108,3 +108,57 @@
 .blog-pagination span {
   color: #aaa;
 }
+.blog-container {
+  background-color: #000;
+  color: #fff;
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.8;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.blog-header h1 {
+  color: limegreen;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.blog-snippet {
+  color: #ccc;
+  font-style: italic;
+  margin-bottom: 1.5rem;
+}
+
+.blog-cover {
+  width: 100%;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+
+.blog-meta {
+  font-size: 0.9rem;
+  color: #999;
+  margin-bottom: 2rem;
+}
+
+.blog-content h2, .blog-content h3 {
+  color: limegreen;
+  margin-top: 2rem;
+}
+
+.blog-content p {
+  margin: 1rem 0;
+}
+
+.blog-content ul {
+  padding-left: 1.2rem;
+  list-style: disc;
+}
+
+.blog-loading {
+  padding: 2rem;
+  text-align: center;
+  color: limegreen;
+  font-weight: bold;
+}
