@@ -15,13 +15,13 @@ export default function HustleChallengesPage() {
   const [spinResult, setSpinResult] = useState(null);
 
   const wheelRewards = [
-    { label: "5 Stars", value: 5 },
-    { label: "10 Stars", value: 10 },
-    { label: "Premium Offer", value: "premium_offer" },
-    { label: "Free AI Session", value: "ai_session" },
-    { label: "Try Again", value: 0 },
-    { label: "20 Stars", value: 20 },
-    { label: "Profile Boost", value: "profile_boost" },
+    { label: "5 Stars ⭐", value: 5, weight: 20 },
+    { label: "10 Stars ⭐⭐", value: 10, weight: 15 },
+    { label: "Premium Offer 🎁", value: "premium_offer", weight: 6 },
+    { label: "Free AI Session 🧠", value: "ai_session", weight: 7 },
+    { label: "Try Again 🚫", value: 0, weight: 35 },
+    { label: "20 Stars ⭐⭐⭐", value: 20, weight: 8 },
+    { label: "Profile Boost ⚡", value: "profile_boost", weight: 5 },
   ];
 
   useEffect(() => {
@@ -38,6 +38,7 @@ export default function HustleChallengesPage() {
       fetchStars();
       fetchChallenges();
       subscribeToStarUpdates();
+      subscribeToChallengeUpdates();
     }
   }, [user]);
 
@@ -48,6 +49,34 @@ export default function HustleChallengesPage() {
       .eq("user_id", user.id)
       .single();
     if (!error && data) setStars(data.stars_remaining);
+  };
+
+  const fetchChallenges = async () => {
+    const { data, error } = await supabase
+      .from("user_challenges")
+      .select(`
+        id,
+        progress,
+        completed,
+        challenge_id,
+        challenges (
+          title,
+          reward,
+          total_steps
+        )
+      `)
+      .eq("user_id", user.id);
+
+    if (!error && data) {
+      const formatted = data.map((uc) => ({
+        id: uc.id,
+        title: uc.challenges.title,
+        progress: uc.progress,
+        total: uc.challenges.total_steps,
+        reward: uc.challenges.reward,
+      }));
+      setChallenges(formatted);
+    }
   };
 
   const subscribeToStarUpdates = () => {
@@ -69,12 +98,32 @@ export default function HustleChallengesPage() {
     return () => supabase.removeChannel(channel);
   };
 
-  const fetchChallenges = async () => {
-    setChallenges([
-      { id: 1, title: "Post 3 Offers", progress: 2, total: 3, reward: 10 },
-      { id: 2, title: "Send 5 Messages", progress: 1, total: 5, reward: 5 },
-      { id: 3, title: "Complete Profile", progress: 1, total: 1, reward: 3 },
-    ]);
+  const subscribeToChallengeUpdates = () => {
+    const channel = supabase
+      .channel("user-challenges-updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_challenges",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => fetchChallenges()
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  };
+
+  const weightedRandom = () => {
+    const totalWeight = wheelRewards.reduce((acc, reward) => acc + reward.weight, 0);
+    let rand = Math.random() * totalWeight;
+    for (const reward of wheelRewards) {
+      if (rand < reward.weight) return reward;
+      rand -= reward.weight;
+    }
+    return wheelRewards[0];
   };
 
   const handleSpin = async () => {
@@ -91,7 +140,7 @@ export default function HustleChallengesPage() {
       .eq("user_id", user.id);
 
     setTimeout(async () => {
-      const reward = wheelRewards[Math.floor(Math.random() * wheelRewards.length)];
+      const reward = weightedRandom();
       setSpinResult(reward.label);
       setIsSpinning(false);
 
@@ -104,14 +153,12 @@ export default function HustleChallengesPage() {
     }, 3000);
   };
 
-  // ✅ Close sidebar when link clicked (on mobile)
   const handleNavClick = () => {
     if (window.innerWidth < 1024) {
       setSidebarOpen(false);
     }
   };
 
-  // ✅ Ensure sidebar is always open on desktop
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
@@ -127,7 +174,7 @@ export default function HustleChallengesPage() {
 
   if (!user) return <p>Loading...</p>;
 
- return (
+  return (
     <div className="dashboard">
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="logo">Glimo</div>
@@ -142,14 +189,11 @@ export default function HustleChallengesPage() {
             <li><a href="/dashboard/HustleChallenges" className="active" onClick={handleNavClick}><i className="fas fa-trophy"></i>Challenges</a></li>
             <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
             <li><a href="/dashboard/help_center" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
-
-            {/* Premium Link - Highlighted */}
             <li style={{ background: "linear-gradient(90deg, #FFD700, #FFA500)", borderRadius: "8px", margin: "10px 0" }}>
-              <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
+              <a href="/dashboard/premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
                 <i className="fas fa-crown"></i> Go Premium
               </a>
             </li>
-
             <li><a href="/dashboard/settings" onClick={handleNavClick}><i className="fas fa-cog"></i> Settings</a></li>
             <li>
               <button
@@ -166,7 +210,6 @@ export default function HustleChallengesPage() {
         </nav>
       </aside>
 
-      {/* Main Content */}
       <main className="main-content">
         <header>
           <div className="user-info">
@@ -181,7 +224,6 @@ export default function HustleChallengesPage() {
           </div>
         </header>
 
-        {/* Challenges Section */}
         <section className="challenges-section">
           <h2>Active Challenges</h2>
           <div className="challenges-list">
@@ -201,7 +243,6 @@ export default function HustleChallengesPage() {
           </div>
         </section>
 
-        {/* Spin Wheel Section */}
         <section className="spin-wheel-section">
           <h2>Spin the Wheel (5 ⭐ per spin)</h2>
           <motion.div

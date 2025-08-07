@@ -63,7 +63,7 @@ export default function HelpCenterPage() {
             <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
             <li><a href="/dashboard/help_center" className="active" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
             <li style={{ background: "linear-gradient(90deg, #FFD700, #FFA500)", borderRadius: "8px", margin: "10px 0" }}>
-              <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
+              <a href="/dashboard/premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
                 <i className="fas fa-crown"></i> Go Premium
               </a>
             </li>

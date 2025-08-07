@@ -129,7 +129,7 @@ export default function SettingsPage() {
               }}
             >
               <a
-                href="/dashboard/Premium"
+                href="/dashboard/premium"
                 onClick={handleNavClick}
                 style={{ color: "#fff", fontWeight: "bold" }}
               >

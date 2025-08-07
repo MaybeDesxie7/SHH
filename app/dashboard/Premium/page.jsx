@@ -97,7 +97,6 @@ export default function PremiumPage() {
     setModalMessage(`Successfully redeemed: ${perk}`);
   };
 
-  // ✅ Sidebar responsive logic
   const handleNavClick = () => {
     if (window.innerWidth < 1024) {
       setSidebarOpen(false);
@@ -134,14 +133,11 @@ export default function PremiumPage() {
             <li><a href="/dashboard/HustleChallenges" onClick={handleNavClick}><i className="fas fa-trophy"></i>Challenges</a></li>
             <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
             <li><a href="/dashboard/help_center" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
-
-            {/* Premium Link - Highlighted */}
             <li style={{ background: "linear-gradient(90deg, #FFD700, #FFA500)", borderRadius: "8px", margin: "10px 0" }}>
-              <a href="/dashboard/Premium" className="active" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
+              <a href="/dashboard/premium" className="active" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
                 <i className="fas fa-crown"></i> Go Premium
               </a>
             </li>
-
             <li><a href="/dashboard/settings" onClick={handleNavClick}><i className="fas fa-cog"></i> Settings</a></li>
             <li>
               <button
@@ -158,127 +154,53 @@ export default function PremiumPage() {
         </nav>
       </aside>
 
-      {/* Main Content */}
       <main className="main-content">
         <header>
           <div className="user-info">
             <span>Premium & Star Marketplace</span>
             <span className="stars-display">⭐ {stars} Stars</span>
-            <button
-              onClick={() => setSidebarOpen((prev) => !prev)}
-              className="toggle-sidebar"
-            >
+            <button onClick={() => setSidebarOpen((prev) => !prev)} className="toggle-sidebar">
               <i className="fas fa-bars"></i>
             </button>
           </div>
         </header>
 
-        {/* Premium Perks */}
         <section className="premium-section">
           <h2>Why Go Premium?</h2>
           <div className="premium-perks">
-            <div className="premium-card">
-              <i className="fas fa-crown"></i>
-              <h3>Double Rewards</h3>
-            </div>
-            <div className="premium-card">
-              <i className="fas fa-sync"></i>
-              <h3>5 Free Spins</h3>
-            </div>
-            <div className="premium-card">
-              <i className="fas fa-bolt"></i>
-              <h3>Profile Highlight</h3>
-            </div>
-            <div className="premium-card">
-              <i className="fas fa-gem"></i>
-              <h3>Exclusive Offers</h3>
-            </div>
+            <div className="premium-card"><i className="fas fa-crown"></i><h3>Double Rewards</h3></div>
+            <div className="premium-card"><i className="fas fa-sync"></i><h3>5 Free Spins</h3></div>
+            <div className="premium-card"><i className="fas fa-bolt"></i><h3>Profile Highlight</h3></div>
+            <div className="premium-card"><i className="fas fa-map-marker-alt"></i><h3>Find Users Near Me</h3></div>
+            <div className="premium-card"><i className="fas fa-star"></i><h3>25 Bonus Stars</h3></div>
           </div>
-          <button
-            className="btn premium-btn"
-            onClick={handleSubscribePremium}
-            disabled={loading}
-          >
+          <button className="btn premium-btn" onClick={handleSubscribePremium} disabled={loading}>
             {loading ? "Loading..." : "Subscribe for $9.99/month"}
           </button>
         </section>
 
-        {/* Buy Stars */}
         <section className="buy-stars-section">
           <h2>Buy Stars</h2>
           <div className="stars-bundles">
-            <div className="stars-card">
-              <h3>50 Stars</h3>
-              <p>$5</p>
-              <button className="btn" onClick={() => handleBuyStars(50)}>
-                Buy Now
-              </button>
-            </div>
-            <div className="stars-card">
-              <h3>120 Stars</h3>
-              <p>$10</p>
-              <button className="btn" onClick={() => handleBuyStars(120)}>
-                Buy Now
-              </button>
-            </div>
-            <div className="stars-card">
-              <h3>300 Stars</h3>
-              <p>$20</p>
-              <button className="btn" onClick={() => handleBuyStars(300)}>
-                Buy Now
-              </button>
-            </div>
+            <div className="stars-card"><h3>50 Stars</h3><p>$5</p><button className="btn" onClick={() => handleBuyStars(50)}>Buy Now</button></div>
+            <div className="stars-card"><h3>120 Stars</h3><p>$10</p><button className="btn" onClick={() => handleBuyStars(120)}>Buy Now</button></div>
+            <div className="stars-card"><h3>300 Stars</h3><p>$20</p><button className="btn" onClick={() => handleBuyStars(300)}>Buy Now</button></div>
+            <div className="stars-card"><h3>Star AI</h3><p>$2.49/month</p><button className="btn" onClick={() => handleBuyStars("star_ai")}>
+              Unlock
+            </button></div>
           </div>
         </section>
 
-        {/* Star Marketplace */}
         <section className="stars-marketplace">
           <h2>Spend Your Stars</h2>
           <div className="marketplace-grid">
-            <div className="marketplace-item">
-              <h3>Profile Highlight</h3>
-              <p>10 ⭐</p>
-              <button
-                className="btn"
-                onClick={() => handleRedeem("Profile Highlight", 10)}
-              >
-                Redeem
-              </button>
-            </div>
-            <div className="marketplace-item">
-              <h3>Offer Boost</h3>
-              <p>20 ⭐</p>
-              <button
-                className="btn"
-                onClick={() => handleRedeem("Offer Boost", 20)}
-              >
-                Redeem
-              </button>
-            </div>
-            <div className="marketplace-item">
-              <h3>Extra Spin</h3>
-              <p>5 ⭐</p>
-              <button
-                className="btn"
-                onClick={() => handleRedeem("Extra Spin", 5)}
-              >
-                Redeem
-              </button>
-            </div>
-            <div className="marketplace-item">
-              <h3>AI Session</h3>
-              <p>15 ⭐</p>
-              <button
-                className="btn"
-                onClick={() => handleRedeem("AI Session", 15)}
-              >
-                Redeem
-              </button>
-            </div>
+            <div className="marketplace-item"><h3>Profile Highlight</h3><p>30 ⭐</p><button className="btn" onClick={() => handleRedeem("Profile Highlight", 10)}>Redeem</button></div>
+            <div className="marketplace-item"><h3>Offer Boost (1 week)</h3><p>35 ⭐</p><button className="btn" onClick={() => handleRedeem("Offer Boost - 1 Week", 20)}>Redeem</button></div>
+            <div className="marketplace-item"><h3>Extra Spin</h3><p>5 ⭐</p><button className="btn" onClick={() => handleRedeem("Extra Spin", 5)}>Redeem</button></div>
+            <div className="marketplace-item"><h3>AI Session</h3><p>15 ⭐</p><button className="btn" onClick={() => handleRedeem("AI Session", 15)}>Redeem</button></div>
           </div>
         </section>
 
-        {/* Modal */}
         {modalMessage && (
           <div className="modal">
             <div className="modal-content">

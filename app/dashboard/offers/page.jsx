@@ -131,7 +131,7 @@ export default function OffersPage() {
               }}
             >
               <a
-                href="/dashboard/Premium"
+                href="/dashboard/premium"
                 onClick={handleNavClick}
                 style={{ color: "#fff", fontWeight: "bold" }}
               >
