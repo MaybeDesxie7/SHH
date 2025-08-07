@@ -289,15 +289,23 @@ export default function HustleStreetPage() {
           ) : activeTab === 'requests' ? (
             requests.length > 0 ? (
               requests.map((req) => (
-                <div key={req.id} className="request-card">
-                  <img src={req.sender?.avatar || '/default-avatar.png'} alt="avatar" className="avatar" />
-                  <span>{req.sender?.name || 'Anonymous'}</span>
-                  <div className="request-actions">
-                    <button onClick={() => handleAccept(req.id)}>Accept</button>
-                    <button onClick={() => handleReject(req.id)}>Reject</button>
-                  </div>
-                </div>
-              ))
+  <div key={req.id} className="hustle-request-card">
+    <img
+      src={req.sender?.avatar || '/default-avatar.png'}
+      alt="avatar"
+      className="hustle-request-avatar"
+    />
+    <div className="hustle-request-info">
+      <h4>{req.sender?.name || 'Anonymous'}</h4>
+      <p>Wants to collaborate with you.</p>
+    </div>
+    <div className="hustle-request-actions">
+      <button className="accept-btn" onClick={() => handleAccept(req.id)}>Accept</button>
+      <button className="reject-btn" onClick={() => handleReject(req.id)}>Reject</button>
+    </div>
+  </div>
+))
+
             ) : (
               <p>No pending requests.</p>
             )

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -25,18 +25,64 @@ export default function OfferCard({
   const handleRequestPartnership = async () => {
     if (!user_id) return alert('User not available');
     setRequesting(true);
-    const { error } = await supabase.from('partnership_requests').insert([
-      {
-        requester_id: (await supabase.auth.getUser()).data.user.id,
-        requested_id: user_id,
-        status: 'pending',
-      },
-    ]);
-    setRequesting(false);
-    if (error) {
-      alert('Failed to send request: ' + error.message);
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      setRequesting(false);
+      return alert('Failed to get current user');
+    }
+
+    const sender_id = user.id;
+    const receiver_id = user_id;
+
+    // Check if a request already exists
+    const { data: existingRequest, error: fetchError } = await supabase
+      .from('partnership_requests')
+      .select('*')
+      .eq('sender_id', sender_id)
+      .eq('receiver_id', receiver_id)
+      .maybeSingle();
+
+    if (fetchError) {
+      setRequesting(false);
+      return alert('Error checking existing request: ' + fetchError.message);
+    }
+
+    if (existingRequest) {
+      // Update status if exists
+      const { error: updateError } = await supabase
+        .from('partnership_requests')
+        .update({ status: 'pending' })
+        .eq('id', existingRequest.id);
+
+      setRequesting(false);
+      if (updateError) {
+        alert('Failed to update request: ' + updateError.message);
+      } else {
+        alert('Partnership request updated to pending!');
+      }
     } else {
-      alert('Partnership request sent!');
+      // Insert new request
+      const { error: insertError } = await supabase
+        .from('partnership_requests')
+        .insert([
+          {
+            sender_id,
+            receiver_id,
+            status: 'pending',
+          },
+        ]);
+
+      setRequesting(false);
+      if (insertError) {
+        alert('Failed to send request: ' + insertError.message);
+      } else {
+        alert('Partnership request sent!');
+      }
     }
   };
 
@@ -71,7 +117,7 @@ export default function OfferCard({
           onClick={handleRequestPartnership}
           disabled={requesting}
         >
-          🤝 Request Partnership
+          {requesting ? '⏳ Sending...' : '🤝 Request Partnership'}
         </button>
       </div>
     </div>

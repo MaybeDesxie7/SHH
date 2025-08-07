@@ -53,18 +53,19 @@ export default function DashboardPage() {
       setStarsRemaining(starData?.stars_remaining || 0);
 
       // Count pending accepted partnership requests as Hustle Pals
-      const { data: palsData, error: palsError } = await supabase
-        .from("partnership_requests")
-        .select("id", { count: "exact", head: true })
-        .or(`sender_id.eq.${userData.user.id},receiver_id.eq.${userData.user.id}`)
-        .eq("status", "accepted");
+      const { count: palsCount, error: palsError } = await supabase
+  .from("partnership_requests")
+  .select('*', { count: 'exact', head: true })
+  .or(`sender_id.eq.${userData.user.id},receiver_id.eq.${userData.user.id}`)
+  .eq('status', 'accepted');
 
-      if (palsError) {
-        console.error("Error fetching Hustle Pals:", palsError);
-        setHustlePalsCount(0);
-      } else {
-        setHustlePalsCount(palsData?.length || 0);
-      }
+if (palsError) {
+  console.error("Error fetching Hustle Pals:", palsError);
+  setHustlePalsCount(0);
+} else {
+  setHustlePalsCount(palsCount || 0);
+}
+
 
       const { count: msgCount } = await supabase
         .from("messages")

@@ -1,79 +1,76 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useEffect, useRef, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
-const EMOJIS = ["😀", "😂", "😍", "👍", "🙏", "🎉"];
+const EMOJIS = ['😀', '😂', '😍', '👍', '🙏', '🎉'];
 
-export default function PrivateChatView({ currentUserId, selectedUserId }) {
+export default function PrivateChatView({ selectedUserId }) {
   const [messages, setMessages] = useState([]);
   const [otherUser, setOtherUser] = useState(null);
-  const [onlineStatus, setOnlineStatus] = useState("Online"); // placeholder
-  const [newMessage, setNewMessage] = useState("");
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [onlineStatus] = useState('Online');
+  const [newMessage, setNewMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Fetch recipient info
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id);
+    };
+    fetchCurrentUser();
+  }, []);
+
   useEffect(() => {
     if (!selectedUserId) return;
 
     async function fetchUser() {
       const { data, error } = await supabase
-        .from("public_profiles")
-        .select("user_id, name, avatar")
-        .eq("user_id", selectedUserId)
+        .from('public_profiles')
+        .select('user_id, name, avatar')
+        .eq('user_id', selectedUserId)
         .single();
 
-      if (!error && data) {
-        setOtherUser(data);
-      } else {
-        console.error("Failed to load user", error);
-      }
+      if (!error && data) setOtherUser(data);
+      else console.error('Failed to load user', error);
     }
 
     fetchUser();
   }, [selectedUserId]);
 
-  // Load and subscribe to messages
   useEffect(() => {
     if (!currentUserId || !selectedUserId) return;
 
     async function fetchMessages() {
       const { data, error } = await supabase
-        .from("messages")
-        .select("*")
+        .from('messages')
+        .select('*')
         .or(
           `and(sender.eq.${currentUserId},recipient.eq.${selectedUserId}),and(sender.eq.${selectedUserId},recipient.eq.${currentUserId})`
         )
-        .order("created_at", { ascending: true });
+        .order('created_at', { ascending: true });
 
-      if (!error) {
-        setMessages(data);
-      } else {
-        console.error("Failed to fetch messages", error);
-      }
+      if (!error) setMessages(data);
+      else console.error('Failed to fetch messages', error);
     }
 
     fetchMessages();
 
     const channel = supabase
-      .channel("realtime-messages")
+      .channel('realtime:messages')
       .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-        },
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
           const msg = payload.new;
           const isRelevant =
             (msg.sender === currentUserId && msg.recipient === selectedUserId) ||
             (msg.sender === selectedUserId && msg.recipient === currentUserId);
-          if (isRelevant) {
-            setMessages((prev) => [...prev, msg]);
-          }
+          if (isRelevant) setMessages((prev) => [...prev, msg]);
         }
       )
       .subscribe();
@@ -83,59 +80,61 @@ export default function PrivateChatView({ currentUserId, selectedUserId }) {
     };
   }, [currentUserId, selectedUserId]);
 
-  // Scroll to latest message
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Send message
-  async function sendMessage(content, type = "text", metadata = null) {
-    if (!content.trim()) return;
+  async function sendMessage(content, type = 'text', fileUrl = null, metadata = null) {
+    if (!content.trim() && !fileUrl) return;
 
-    const { error } = await supabase.from("messages").insert([
+    const { error } = await supabase.from('messages').insert([
       {
         sender: currentUserId,
         recipient: selectedUserId,
         content,
         type,
         metadata,
+        ...(fileUrl ? { file_url: fileUrl } : {}),
       },
     ]);
 
     if (error) {
-      alert("Error sending message: " + error.message);
+      alert('Error sending message: ' + error.message);
     } else {
-      setNewMessage("");
+      setNewMessage('');
       setShowEmojiPicker(false);
     }
   }
 
-  // Handle file uploads
   async function handleFileChange(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const fileExt = file.name.split(".").pop();
+    const fileExt = file.name.split('.').pop();
     const fileName = `${currentUserId}/${Date.now()}.${fileExt}`;
-    const { data, error: uploadError } = await supabase.storage
-      .from("chat-files")
+
+    const { error: uploadError } = await supabase.storage
+      .from('chat-files')
       .upload(fileName, file);
 
     if (uploadError) {
-      alert("File upload failed: " + uploadError.message);
+      alert('File upload failed: ' + uploadError.message);
       return;
     }
 
     const { data: urlData, error: urlError } = supabase.storage
-      .from("chat-files")
+      .from('chat-files')
       .getPublicUrl(fileName);
 
     if (urlError || !urlData?.publicUrl) {
-      alert("Failed to get file URL: " + urlError?.message);
+      alert('Failed to get file URL: ' + urlError?.message);
       return;
     }
 
-    await sendMessage(urlData.publicUrl, "file", { fileName: file.name });
+    await sendMessage(file.name, 'file', urlData.publicUrl, {
+      size: file.size,
+      type: file.type,
+    });
   }
 
   function addEmoji(emoji) {
@@ -144,7 +143,6 @@ export default function PrivateChatView({ currentUserId, selectedUserId }) {
 
   return (
     <div className="chat-view">
-      {/* Top bar */}
       <div className="chat-header">
         {otherUser ? (
           <>
@@ -165,31 +163,25 @@ export default function PrivateChatView({ currentUserId, selectedUserId }) {
         )}
       </div>
 
-      {/* Messages */}
       <div className="messages-container">
         {messages.map((msg) => (
           <div
             key={msg.id}
             className={`message-bubble ${
-              msg.sender === currentUserId ? "sent" : "received"
+              msg.sender === currentUserId ? 'sent' : 'received'
             }`}
           >
-            {msg.type === "file" ? (
-              <a
-                href={msg.content}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="file-link"
-              >
-                📎 {msg.metadata?.fileName || "File"}
+            {msg.type === 'file' && msg.file_url ? (
+              <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
+                📎 {msg.content}
               </a>
             ) : (
               <p>{msg.content}</p>
             )}
             <span className="timestamp">
               {new Date(msg.created_at).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
+                hour: '2-digit',
+                minute: '2-digit',
               })}
             </span>
           </div>
@@ -197,7 +189,6 @@ export default function PrivateChatView({ currentUserId, selectedUserId }) {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input area */}
       <div className="chat-input-area">
         <button
           className="emoji-toggle-btn"
@@ -227,7 +218,7 @@ export default function PrivateChatView({ currentUserId, selectedUserId }) {
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
               sendMessage(newMessage);
             }
@@ -237,7 +228,7 @@ export default function PrivateChatView({ currentUserId, selectedUserId }) {
         <input
           type="file"
           ref={fileInputRef}
-          style={{ display: "none" }}
+          style={{ display: 'none' }}
           onChange={handleFileChange}
         />
 
