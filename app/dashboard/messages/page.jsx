@@ -1,26 +1,39 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PrivateChatView from "./PrivateChatView";
 import UserSearchBar from "./UserSearchBar";
 import ChatSidebar from "./ChatSidebar";
 import "@/styles/messages.css";
 
 export default function MessagesPage() {
-  // selectedChat will be an object { user_id, name, avatar } from search or chat list
   const [selectedChat, setSelectedChat] = useState(null);
-  // For mobile sidebar toggle
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(0);
 
-  // When user selects chat from sidebar, close sidebar on mobile
+  useEffect(() => {
+    // Set initial width
+    setWindowWidth(window.innerWidth);
+
+    // Update width on resize
+    function handleResize() {
+      setWindowWidth(window.innerWidth);
+    }
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   function handleSelectChat(user) {
     setSelectedChat(user);
     setSidebarOpen(false);
   }
 
+  // Sidebar is open if sidebarOpen state is true or screen wider than 768px
+  const showSidebar = sidebarOpen || windowWidth > 768;
+
   return (
     <div className="messages-wrapper">
-      {/* Sidebar toggler for mobile */}
       <button
         className="sidebar-toggle-btn"
         onClick={() => setSidebarOpen((v) => !v)}
@@ -29,8 +42,7 @@ export default function MessagesPage() {
         ☰
       </button>
 
-      {/* Sidebar with chat list and user search */}
-      {(sidebarOpen || window.innerWidth > 768) && (
+      {showSidebar && (
         <ChatSidebar
           selectedChat={selectedChat}
           onSelectChat={handleSelectChat}
@@ -38,7 +50,6 @@ export default function MessagesPage() {
         />
       )}
 
-      {/* Main chat view */}
       <main className="chat-main">
         {!selectedChat ? (
           <UserSearchBar onSelectUser={handleSelectChat} />
