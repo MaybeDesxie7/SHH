@@ -149,7 +149,7 @@ export default function ToolsPage() {
               }}
             >
               <a
-                href="/dashboard/premium"
+                href="/dashboard/Premium"
                 onClick={handleNavClick}
                 style={{ color: "#fff", fontWeight: "bold" }}
               >

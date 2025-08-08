@@ -164,7 +164,7 @@ export default function ProfilePage() {
 
             {/* Premium Highlight */}
             <li style={{ background: "linear-gradient(90deg, #FFD700, #FFA500)", borderRadius: "8px", margin: "10px 0" }}>
-              <a href="/dashboard/premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
+              <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
                 <i className="fas fa-crown"></i> Go Premium
               </a>
             </li>

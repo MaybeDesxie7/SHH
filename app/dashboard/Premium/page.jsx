@@ -217,7 +217,7 @@ export default function PremiumPage() {
               }}
             >
               <a
-                href="/dashboard/premium"
+                href="/dashboard/Premium"
                 className="active"
                 onClick={handleNavClick}
                 style={{ color: "#fff", fontWeight: "bold" }}

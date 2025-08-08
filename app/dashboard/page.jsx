@@ -150,7 +150,7 @@ if (palsError) {
 
             {/* Premium Link - Highlighted */}
             <li style={{ background: "linear-gradient(90deg, #FFD700, #FFA500)", borderRadius: "8px", margin: "10px 0" }}>
-              <a href="/dashboard/premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
+              <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
                 <FaCrown /> Go Premium
               </a>
             </li>
@@ -216,7 +216,7 @@ if (palsError) {
             <FaCrown /> Upgrade to Premium
           </motion.h2>
           <p style={{ marginTop: "10px", fontSize: "16px" }}>Unlock exclusive perks, double rewards, and more!</p>
-          <a href="/dashboard/premium">
+          <a href="/dashboard/Premium">
             <motion.button
               style={{
                 background: "#fff",

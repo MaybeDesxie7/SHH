@@ -333,7 +333,7 @@ export default function HustleChallengesPage() {
               </a>
             </li>
             <li style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)', borderRadius: '8px', margin: '10px 0' }}>
-              <a href="/dashboard/premium" onClick={handleNavClick} style={{ color: '#fff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: '#fff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <FaCrown /> Go Premium
               </a>
             </li>
