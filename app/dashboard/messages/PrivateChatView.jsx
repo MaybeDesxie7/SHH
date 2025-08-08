@@ -1,70 +1,95 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
-const EMOJIS = ['😀', '😂', '😍', '👍', '🙏', '🎉'];
+const EMOJIS = ["😀", "😂", "😍", "👍", "🙏", "🎉"];
 
 export default function PrivateChatView({ selectedUserId }) {
   const [messages, setMessages] = useState([]);
   const [otherUser, setOtherUser] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [onlineStatus] = useState('Online');
-  const [newMessage, setNewMessage] = useState('');
+  const [onlineStatus] = useState("Online");
+  const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // Get current user id
   useEffect(() => {
     const fetchCurrentUser = async () => {
       const {
         data: { user },
+        error,
       } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Error getting current user:", error);
+      }
       setCurrentUserId(user?.id);
     };
     fetchCurrentUser();
   }, []);
 
+  // Fetch selected user info
   useEffect(() => {
-    if (!selectedUserId) return;
+    if (!selectedUserId) {
+      setOtherUser(null);
+      return;
+    }
 
     async function fetchUser() {
+      console.log("Fetching user for selectedUserId:", selectedUserId);
       const { data, error } = await supabase
-        .from('public_profiles')
-        .select('user_id, name, avatar')
-        .eq('user_id', selectedUserId)
+        .from("public_profiles")
+        .select("user_id, name, avatar")
+        .eq("user_id", selectedUserId)
         .single();
 
-      if (!error && data) setOtherUser(data);
-      else console.error('Failed to load user', error);
+      if (error) {
+        console.error("Failed to load user", error);
+        setOtherUser(null);
+      } else if (!data) {
+        console.warn("No user found for id:", selectedUserId);
+        setOtherUser(null);
+      } else {
+        setOtherUser(data);
+      }
     }
 
     fetchUser();
   }, [selectedUserId]);
 
+  // Fetch messages & subscribe to realtime inserts
   useEffect(() => {
     if (!currentUserId || !selectedUserId) return;
 
     async function fetchMessages() {
       const { data, error } = await supabase
-        .from('messages')
-        .select('*')
+        .from("messages")
+        .select("*")
         .or(
           `and(sender.eq.${currentUserId},recipient.eq.${selectedUserId}),and(sender.eq.${selectedUserId},recipient.eq.${currentUserId})`
         )
-        .order('created_at', { ascending: true });
+        .order("created_at", { ascending: true });
 
-      if (!error) setMessages(data);
-      else console.error('Failed to fetch messages', error);
+      if (error) {
+        console.error("Failed to fetch messages", error);
+      } else {
+        setMessages(data);
+      }
     }
 
     fetchMessages();
 
     const channel = supabase
-      .channel('realtime:messages')
+      .channel("public:messages")
       .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
         (payload) => {
           const msg = payload.new;
           const isRelevant =
@@ -80,14 +105,15 @@ export default function PrivateChatView({ selectedUserId }) {
     };
   }, [currentUserId, selectedUserId]);
 
+  // Auto scroll to bottom on messages change
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function sendMessage(content, type = 'text', fileUrl = null, metadata = null) {
+  async function sendMessage(content, type = "text", fileUrl = null, metadata = null) {
     if (!content.trim() && !fileUrl) return;
 
-    const { error } = await supabase.from('messages').insert([
+    const { error } = await supabase.from("messages").insert([
       {
         sender: currentUserId,
         recipient: selectedUserId,
@@ -99,9 +125,9 @@ export default function PrivateChatView({ selectedUserId }) {
     ]);
 
     if (error) {
-      alert('Error sending message: ' + error.message);
+      alert("Error sending message: " + error.message);
     } else {
-      setNewMessage('');
+      setNewMessage("");
       setShowEmojiPicker(false);
     }
   }
@@ -110,28 +136,24 @@ export default function PrivateChatView({ selectedUserId }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const fileExt = file.name.split('.').pop();
+    const fileExt = file.name.split(".").pop();
     const fileName = `${currentUserId}/${Date.now()}.${fileExt}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('chat-files')
-      .upload(fileName, file);
+    const { error: uploadError } = await supabase.storage.from("chat-files").upload(fileName, file);
 
     if (uploadError) {
-      alert('File upload failed: ' + uploadError.message);
+      alert("File upload failed: " + uploadError.message);
       return;
     }
 
-    const { data: urlData, error: urlError } = supabase.storage
-      .from('chat-files')
-      .getPublicUrl(fileName);
+    const { data: urlData, error: urlError } = supabase.storage.from("chat-files").getPublicUrl(fileName);
 
     if (urlError || !urlData?.publicUrl) {
-      alert('Failed to get file URL: ' + urlError?.message);
+      alert("Failed to get file URL: " + urlError?.message);
       return;
     }
 
-    await sendMessage(file.name, 'file', urlData.publicUrl, {
+    await sendMessage(file.name, "file", urlData.publicUrl, {
       size: file.size,
       type: file.type,
     });
@@ -149,9 +171,7 @@ export default function PrivateChatView({ selectedUserId }) {
             {otherUser.avatar ? (
               <img src={otherUser.avatar} alt={otherUser.name} className="avatar" />
             ) : (
-              <div className="default-avatar">
-                {otherUser.name?.charAt(0).toUpperCase()}
-              </div>
+              <div className="default-avatar">{otherUser.name?.charAt(0).toUpperCase()}</div>
             )}
             <div className="user-info">
               <div className="username">{otherUser.name}</div>
@@ -165,13 +185,8 @@ export default function PrivateChatView({ selectedUserId }) {
 
       <div className="messages-container">
         {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`message-bubble ${
-              msg.sender === currentUserId ? 'sent' : 'received'
-            }`}
-          >
-            {msg.type === 'file' && msg.file_url ? (
+          <div key={msg.id} className={`message-bubble ${msg.sender === currentUserId ? "sent" : "received"}`}>
+            {msg.type === "file" && msg.file_url ? (
               <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
                 📎 {msg.content}
               </a>
@@ -179,10 +194,7 @@ export default function PrivateChatView({ selectedUserId }) {
               <p>{msg.content}</p>
             )}
             <span className="timestamp">
-              {new Date(msg.created_at).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
+              {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </span>
           </div>
         ))}
@@ -190,60 +202,41 @@ export default function PrivateChatView({ selectedUserId }) {
       </div>
 
       <div className="chat-input-area">
-        <button
-          className="emoji-toggle-btn"
-          onClick={() => setShowEmojiPicker((v) => !v)}
-        >
+        <button className="emoji-toggle-btn" onClick={() => setShowEmojiPicker((v) => !v)}>
           😀
         </button>
 
         {showEmojiPicker && (
           <div className="emoji-picker">
             {EMOJIS.map((emoji) => (
-              <button
-                key={emoji}
-                className="emoji-btn"
-                onClick={() => addEmoji(emoji)}
-              >
+              <button key={emoji} className="emoji-btn" onClick={() => addEmoji(emoji)}>
                 {emoji}
               </button>
             ))}
           </div>
         )}
 
-        <input
-          type="text"
+        <textarea
           className="chat-input"
           placeholder="Type a message..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               sendMessage(newMessage);
             }
           }}
+          rows={1}
         />
 
-        <input
-          type="file"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-        />
+        <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
 
-        <button
-          className="file-upload-btn"
-          onClick={() => fileInputRef.current?.click()}
-        >
+        <button className="file-upload-btn" onClick={() => fileInputRef.current?.click()}>
           📎
         </button>
 
-        <button
-          className="send-btn"
-          onClick={() => sendMessage(newMessage)}
-          disabled={!newMessage.trim()}
-        >
+        <button className="send-btn" onClick={() => sendMessage(newMessage)} disabled={!newMessage.trim()}>
           ➤
         </button>
       </div>

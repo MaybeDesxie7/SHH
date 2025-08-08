@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from 'react';
 import AOS from 'aos';
@@ -13,7 +13,7 @@ export default function HomePage() {
   const [subscriberEmail, setSubscriberEmail] = useState('');
   const [subscribeMessage, setSubscribeMessage] = useState('');
   const [reviews, setReviews] = useState([]);
-  const [blogPosts, setBlogPosts] = useState([]); // <-- blog data
+  const [blogPosts, setBlogPosts] = useState([]);
 
   useEffect(() => {
     const link = document.createElement('link');
@@ -93,9 +93,15 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>Glimo | All-in-One Hustle Platform for Modern Entrepreneurs</title>
-        <meta name="description" content="Glimo empowers digital hustlers with trending online income ideas, AI tools, and growth strategies to make money online in 2025." />
-        <meta name="keywords" content="Glimo, online hustle, make money online, digital tools, side hustle 2025, passive income, AI hustle, freelance, entrepreneurship, online business, Glimo tools" />
+        <title>Glimo | The Ultimate Hustle Platform for Digital Entrepreneurs in 2025</title>
+        <meta name="description" content="Glimo is an AI-powered platform that helps digital hustlers discover online income ideas, connect with collaborators, and manage side hustles in one place." />
+        <meta name="keywords" content="Glimo, hustle platform, make money online, side hustle 2025, AI tools, freelancers, entrepreneurship, digital income, remote work tools" />
+        <meta name="author" content="Glimo Team" />
+        <meta property="og:title" content="Glimo | All-in-One Hustle Platform for Modern Entrepreneurs" />
+        <meta property="og:description" content="Launch, manage, and grow your hustle using Glimo’s tools, partnerships, and trends — all in one AI-optimized dashboard." />
+        <meta property="og:image" content="/social-share.png" />
+        <meta property="og:url" content="https://glimo.app" />
+        <meta name="twitter:card" content="summary_large_image" />
       </Head>
 
       <header id="header">

@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -16,7 +17,8 @@ export default function UserSearchBar({ onSelectUser }) {
       const { data, error } = await supabase
         .from("public_profiles")
         .select("user_id, name, avatar")
-        .ilike("name", `%${searchTerm}%`);
+        .ilike("name", `%${searchTerm}%`)
+        .limit(10);
 
       if (!error) setResults(data);
     };
@@ -41,9 +43,7 @@ export default function UserSearchBar({ onSelectUser }) {
               {user.avatar ? (
                 <img src={user.avatar} alt={user.name} className="avatar" />
               ) : (
-                <div className="default-avatar">
-                  {user.name ? user.name.charAt(0).toUpperCase() : "U"}
-                </div>
+                <div className="default-avatar">{user.name?.charAt(0).toUpperCase() || "U"}</div>
               )}
               <span>{user.name}</span>
             </li>

@@ -1,6 +1,5 @@
 /* HustleStreet CSS — professional, bold, Glimo-styled */
 
-body,
 .hustle-street-page {
   background-color: #000000;
   color: #ffffff;
@@ -325,4 +324,9 @@ body,
     width: 100%;
     justify-content: space-between;
   }
+}
+.top-user-card.boosted {
+  border: 2px solid gold;
+  box-shadow: 0 0 10px gold;
+  background: linear-gradient(90deg, #fff8dc, #fffacd);
 }

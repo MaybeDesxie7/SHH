@@ -1,29 +1,51 @@
-// app/dashboard/messages/page.jsx
-// app/dashboard/messages/page.jsx
 "use client";
 
 import React, { useState } from "react";
-
 import PrivateChatView from "./PrivateChatView";
-
 import UserSearchBar from "./UserSearchBar";
+import ChatSidebar from "./ChatSidebar";
 import "@/styles/messages.css";
 
 export default function MessagesPage() {
+  // selectedChat will be an object { user_id, name, avatar } from search or chat list
   const [selectedChat, setSelectedChat] = useState(null);
+  // For mobile sidebar toggle
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // When user selects chat from sidebar, close sidebar on mobile
+  function handleSelectChat(user) {
+    setSelectedChat(user);
+    setSidebarOpen(false);
+  }
 
   return (
     <div className="messages-wrapper">
-      {!selectedChat && <UserSearchBar onSelectUser={setSelectedChat} />}
+      {/* Sidebar toggler for mobile */}
+      <button
+        className="sidebar-toggle-btn"
+        onClick={() => setSidebarOpen((v) => !v)}
+        aria-label="Toggle chat sidebar"
+      >
+        ☰
+      </button>
 
-      {selectedChat ? (
-        <div className="chat-container">
-          
-          <PrivateChatView selectedChat={selectedChat} />
-        </div>
-      ) : (
-        <div className="empty-chat">Search and select a user to start chatting</div>
+      {/* Sidebar with chat list and user search */}
+      {(sidebarOpen || window.innerWidth > 768) && (
+        <ChatSidebar
+          selectedChat={selectedChat}
+          onSelectChat={handleSelectChat}
+          onClose={() => setSidebarOpen(false)}
+        />
       )}
+
+      {/* Main chat view */}
+      <main className="chat-main">
+        {!selectedChat ? (
+          <UserSearchBar onSelectUser={handleSelectChat} />
+        ) : (
+          <PrivateChatView selectedUserId={selectedChat.user_id} />
+        )}
+      </main>
     </div>
   );
 }
