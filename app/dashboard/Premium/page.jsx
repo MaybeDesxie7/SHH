@@ -306,7 +306,7 @@ export default function PremiumPage() {
             {/* New perks added */}
             <div className="premium-card">
               <i className="fas fa-book"></i>
-              <h3>1 Free Ebook</h3>
+              <h3>Premium Ebook</h3>
             </div>
             <div className="premium-card">
               <i className="fas fa-robot"></i>
