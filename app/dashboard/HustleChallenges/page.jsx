@@ -291,6 +291,7 @@ export default function HustleChallengesPage() {
         <div className="logo">Glimo</div>
         <nav>
           <ul>
+             <li><a href="/dashboard" onClick={handleNavClick}><i className="fas fa-home"></i> Dashboard</a></li>
             <li>
               <a href="/dashboard/profile" onClick={handleNavClick}>
                 <i className="fas fa-user" /> Profile
