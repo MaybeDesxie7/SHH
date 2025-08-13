@@ -3,29 +3,44 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-export default function UserSearchBar({ onSelectUser }) {
+export default function UserSearchBar({ onSelectUser, currentUserId }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!searchTerm) {
+      setResults([]);
+      return;
+    }
+
     const fetchUsers = async () => {
-      if (!searchTerm) {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("public_profiles")
+          .select("user_id, name, avatar")
+          .ilike("name", `%${searchTerm}%`)
+          .neq("user_id", currentUserId) // exclude logged-in user
+          .limit(10);
+
+        if (error) {
+          console.error("Error fetching users:", error);
+          setResults([]);
+        } else {
+          setResults(data || []);
+        }
+      } catch (err) {
+        console.error("Unexpected error:", err);
         setResults([]);
-        return;
+      } finally {
+        setLoading(false);
       }
-
-      const { data, error } = await supabase
-        .from("public_profiles")
-        .select("user_id, name, avatar")
-        .ilike("name", `%${searchTerm}%`)
-        .limit(10);
-
-      if (!error) setResults(data);
     };
 
     const delayDebounce = setTimeout(fetchUsers, 300);
     return () => clearTimeout(delayDebounce);
-  }, [searchTerm]);
+  }, [searchTerm, currentUserId]);
 
   return (
     <div className="user-search-bar">
@@ -36,6 +51,9 @@ export default function UserSearchBar({ onSelectUser }) {
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
+
+      {loading && <div className="text-gray-400 mt-1 text-sm">Searching...</div>}
+
       {results.length > 0 && (
         <ul className="search-results">
           {results.map((user) => (

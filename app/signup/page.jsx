@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import Image from 'next/image'
-import '@/styles/style.css'; 
+import '@/styles/style.css'
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -26,14 +25,20 @@ export default function SignupPage() {
 
   const handleSignup = async (e) => {
     e.preventDefault()
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    setError(null)
+
+    // 1️⃣ Sign up user
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
     })
 
     if (signUpError) return setError(signUpError.message)
 
-    const user = data.user
+    const user = signUpData.user
+    if (!user) return setError("Signup failed: no user returned")
+
+    // 2️⃣ Insert into profiles table
     const { error: profileError } = await supabase.from('profiles').insert({
       name: formData.name,
       email: formData.email,
@@ -45,6 +50,13 @@ export default function SignupPage() {
     })
 
     if (profileError) return setError(profileError.message)
+
+    // 3️⃣ Automatically sign in user after signup
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    })
+    if (loginError) return setError(loginError.message)
 
     router.push('/dashboard')
   }

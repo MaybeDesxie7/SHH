@@ -2,242 +2,182 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { FaSmile, FaPaperclip } from "react-icons/fa";
 
-const EMOJIS = ["😀", "😂", "😍", "👍", "🙏", "🎉"];
-
-export default function PrivateChatView({ selectedUserId }) {
+export default function PrivateChatView({ selectedUser, currentUser, backToList }) {
   const [messages, setMessages] = useState([]);
-  const [otherUser, setOtherUser] = useState(null);
-  const [currentUserId, setCurrentUserId] = useState(null);
-  const [onlineStatus] = useState("Online");
-  const [newMessage, setNewMessage] = useState("");
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const chatEndRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const [input, setInput] = useState("");
+  const [pending, setPending] = useState(false);
+  const [file, setFile] = useState(null);
+  const bottomRef = useRef(null);
 
-  // Get current user id
+  const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+
+  // Fetch initial messages
   useEffect(() => {
-    const fetchCurrentUser = async () => {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-      if (error) {
-        console.error("Error getting current user:", error);
+    if (!currentUser || !selectedUser) return;
+
+    const fetchMessages = async () => {
+      let data = [];
+      if (selectedUser.user_id !== "star-ai") {
+        const { data: msgs, error } = await supabase
+          .from("messages")
+          .select("*")
+          .or(
+            `and(sender_id.eq.${currentUser.id},recipient_id.eq.${selectedUser.user_id}),and(sender_id.eq.${selectedUser.user_id},recipient_id.eq.${currentUser.id})`
+          )
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+        data = msgs || [];
       }
-      setCurrentUserId(user?.id);
+      setMessages(data);
+      scrollToBottom();
     };
-    fetchCurrentUser();
-  }, []);
-
-  // Fetch selected user info
-  useEffect(() => {
-    if (!selectedUserId) {
-      setOtherUser(null);
-      return;
-    }
-
-    async function fetchUser() {
-      console.log("Fetching user for selectedUserId:", selectedUserId);
-      const { data, error } = await supabase
-        .from("public_profiles")
-        .select("user_id, name, avatar")
-        .eq("user_id", selectedUserId)
-        .single();
-
-      if (error) {
-        console.error("Failed to load user", error);
-        setOtherUser(null);
-      } else if (!data) {
-        console.warn("No user found for id:", selectedUserId);
-        setOtherUser(null);
-      } else {
-        setOtherUser(data);
-      }
-    }
-
-    fetchUser();
-  }, [selectedUserId]);
-
-  // Fetch messages & subscribe to realtime inserts
-  useEffect(() => {
-    if (!currentUserId || !selectedUserId) return;
-
-    async function fetchMessages() {
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .or(
-          `and(sender.eq.${currentUserId},recipient.eq.${selectedUserId}),and(sender.eq.${selectedUserId},recipient.eq.${currentUserId})`
-        )
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        console.error("Failed to fetch messages", error);
-      } else {
-        setMessages(data);
-      }
-    }
 
     fetchMessages();
+  }, [currentUser, selectedUser]);
 
-    const channel = supabase
-      .channel("public:messages")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-        },
-        (payload) => {
-          const msg = payload.new;
-          const isRelevant =
-            (msg.sender === currentUserId && msg.recipient === selectedUserId) ||
-            (msg.sender === selectedUserId && msg.recipient === currentUserId);
-          if (isRelevant) setMessages((prev) => [...prev, msg]);
-        }
-      )
-      .subscribe();
+  // Real-time subscription for all messages including Star AI
+  useEffect(() => {
+    if (!currentUser || !selectedUser) return;
+
+    const handleNewMessage = (msg) => {
+      // Add only relevant messages
+      if (
+        msg.sender_id === currentUser.id ||
+        msg.recipient_id === currentUser.id ||
+        msg.sender_id === "star-ai"
+      ) {
+        setMessages((prev) => [...prev, msg]);
+        scrollToBottom();
+      }
+    };
+
+    // Subscribe to Postgres changes for real users
+    let channel;
+    if (selectedUser.user_id !== "star-ai") {
+      channel = supabase
+        .channel(`dm:${currentUser.id}:${selectedUser.user_id}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "messages" },
+          (payload) => handleNewMessage(payload.new)
+        )
+        .subscribe();
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
     };
-  }, [currentUserId, selectedUserId]);
+  }, [currentUser, selectedUser]);
 
-  // Auto scroll to bottom on messages change
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // Function to simulate Star AI instant reply
+  const sendAIMessage = async (text) => {
+    const aiMsg = {
+      id: Date.now(),
+      sender_id: "star-ai",
+      recipient_id: currentUser.id,
+      content: `🤖 Star AI: ${text}`,
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, aiMsg]);
+    scrollToBottom();
+  };
 
-  async function sendMessage(content, type = "text", fileUrl = null, metadata = null) {
-    if (!content.trim() && !fileUrl) return;
+  // Send message handler
+  const sendMessage = async () => {
+    const text = input.trim();
+    if (!text && !file) return;
 
-    const { error } = await supabase.from("messages").insert([
-      {
-        sender: currentUserId,
-        recipient: selectedUserId,
-        content,
-        type,
-        metadata,
-        ...(fileUrl ? { file_url: fileUrl } : {}),
-      },
-    ]);
-
-    if (error) {
-      alert("Error sending message: " + error.message);
-    } else {
-      setNewMessage("");
-      setShowEmojiPicker(false);
-    }
-  }
-
-  async function handleFileChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${currentUserId}/${Date.now()}.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage.from("chat-files").upload(fileName, file);
-
-    if (uploadError) {
-      alert("File upload failed: " + uploadError.message);
+    // Star AI message
+    if (selectedUser.user_id === "star-ai") {
+      await sendAIMessage(text);
+      setInput("");
       return;
     }
 
-    const { data: urlData, error: urlError } = supabase.storage.from("chat-files").getPublicUrl(fileName);
+    // Real user message
+    setPending(true);
+    try {
+      let insertData = { sender_id: currentUser.id, recipient_id: selectedUser.user_id, content: text };
+      if (file) insertData.file_url = file.name;
 
-    if (urlError || !urlData?.publicUrl) {
-      alert("Failed to get file URL: " + urlError?.message);
-      return;
+      const { error } = await supabase.from("messages").insert([insertData]);
+      if (error) throw error;
+
+      setInput("");
+      setFile(null);
+    } catch (err) {
+      console.error("Error sending message:", err);
+    } finally {
+      setPending(false);
     }
-
-    await sendMessage(file.name, "file", urlData.publicUrl, {
-      size: file.size,
-      type: file.type,
-    });
-  }
-
-  function addEmoji(emoji) {
-    setNewMessage((prev) => prev + emoji);
-  }
+  };
 
   return (
-    <div className="chat-view">
+    <div className="PrivateChatView">
+      {/* Header */}
       <div className="chat-header">
-        {otherUser ? (
-          <>
-            {otherUser.avatar ? (
-              <img src={otherUser.avatar} alt={otherUser.name} className="avatar" />
-            ) : (
-              <div className="default-avatar">{otherUser.name?.charAt(0).toUpperCase()}</div>
-            )}
-            <div className="user-info">
-              <div className="username">{otherUser.name}</div>
-              <div className="status">{onlineStatus}</div>
-            </div>
-          </>
+        <button className="back-btn" onClick={backToList}>←</button>
+        {selectedUser.avatar ? (
+          <img src={selectedUser.avatar} alt={selectedUser.name} />
         ) : (
-          <div className="loading">Loading user...</div>
+          <div className="avatar-placeholder">{selectedUser.name.charAt(0).toUpperCase()}</div>
         )}
+        <div className="user-info">
+          <p>{selectedUser.name}</p>
+          {selectedUser.user_id !== "star-ai" && <p className="online-status">Online</p>}
+        </div>
       </div>
 
+      {/* Messages */}
       <div className="messages-container">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`message-bubble ${msg.sender === currentUserId ? "sent" : "received"}`}>
-            {msg.type === "file" && msg.file_url ? (
-              <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
-                📎 {msg.content}
-              </a>
-            ) : (
-              <p>{msg.content}</p>
-            )}
-            <span className="timestamp">
-              {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </span>
-          </div>
-        ))}
-        <div ref={chatEndRef} />
+        {messages.map((m) => {
+          const mine = m.sender_id === currentUser.id;
+          const aiMessage = m.sender_id === "star-ai";
+          const wrapperClass = aiMessage
+            ? "bubble-received-wrapper"
+            : mine
+            ? "bubble-sent-wrapper"
+            : "bubble-received-wrapper";
+
+          return (
+            <div key={m.id} className={wrapperClass}>
+              <div className={`message-bubble ${aiMessage ? "ai" : mine ? "sent" : "received"}`}>
+                <div className={aiMessage ? "italic" : ""}>{m.content}</div>
+                <div className="timestamp">
+                  {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={bottomRef} />
       </div>
 
-      <div className="chat-input-area">
-        <button className="emoji-toggle-btn" onClick={() => setShowEmojiPicker((v) => !v)}>
-          😀
-        </button>
-
-        {showEmojiPicker && (
-          <div className="emoji-picker">
-            {EMOJIS.map((emoji) => (
-              <button key={emoji} className="emoji-btn" onClick={() => addEmoji(emoji)}>
-                {emoji}
-              </button>
-            ))}
-          </div>
-        )}
-
+      {/* Input */}
+      <div className="chat-input">
+        <button><FaSmile /></button>
+        <button><FaPaperclip /></button>
         <textarea
-          className="chat-input"
-          placeholder="Type a message..."
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
+          rows={1}
+          placeholder="Type a message…"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              sendMessage(newMessage);
+              sendMessage();
             }
           }}
-          rows={1}
         />
-
-        <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
-
-        <button className="file-upload-btn" onClick={() => fileInputRef.current?.click()}>
-          📎
-        </button>
-
-        <button className="send-btn" onClick={() => sendMessage(newMessage)} disabled={!newMessage.trim()}>
-          ➤
+        <button
+          className="send-btn"
+          onClick={sendMessage}
+          disabled={!input.trim() && !file || pending}
+        >
+          {pending ? "…" : "Send"}
         </button>
       </div>
     </div>

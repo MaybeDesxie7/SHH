@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import '@/styles/style.css';
 import Head from 'next/head';
 
+
 export default function HomePage() {
   const [navVisible, setNavVisible] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
@@ -108,6 +109,7 @@ export default function HomePage() {
         <div className="logo">
           <img src="/logo.png" alt="Glimo Logo" className="logo-image" />
         </div>
+        
 
         <nav id="nav-bar">
           <ul className={`nav-links ${navVisible ? 'show' : ''}`}>

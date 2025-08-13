@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import LoggedInUser from "./LoggedInUser";
+
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer
 } from "recharts";
@@ -24,14 +26,14 @@ export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [messagesCount, setMessagesCount] = useState(0);
-  const [hustlePalsCount, setHustlePalsCount] = useState(0); // replaced clientsCount
+  const [hustlePalsCount, setHustlePalsCount] = useState(0);
   const [starsRemaining, setStarsRemaining] = useState(0);
   const [aiAdvice, setAiAdvice] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [starUsage, setStarUsage] = useState([]);
   const [engagements, setEngagements] = useState([]);
-  const [offersFeed, setOffersFeed] = useState([]); // from HustleStreet for collapsible section
+  const [offersFeed, setOffersFeed] = useState([]);
 
   const [customTitle, setCustomTitle] = useState("");
   const [customDescription, setCustomDescription] = useState("");
@@ -52,20 +54,18 @@ export default function DashboardPage() {
       setProfile(profileData);
       setStarsRemaining(starData?.stars_remaining || 0);
 
-      // Count pending accepted partnership requests as Hustle Pals
       const { count: palsCount, error: palsError } = await supabase
-  .from("partnership_requests")
-  .select('*', { count: 'exact', head: true })
-  .or(`sender_id.eq.${userData.user.id},receiver_id.eq.${userData.user.id}`)
-  .eq('status', 'accepted');
+        .from("partnership_requests")
+        .select('*', { count: 'exact', head: true })
+        .or(`sender_id.eq.${userData.user.id},receiver_id.eq.${userData.user.id}`)
+        .eq('status', 'accepted');
 
-if (palsError) {
-  console.error("Error fetching Hustle Pals:", palsError);
-  setHustlePalsCount(0);
-} else {
-  setHustlePalsCount(palsCount || 0);
-}
-
+      if (palsError) {
+        console.error("Error fetching Hustle Pals:", palsError);
+        setHustlePalsCount(0);
+      } else {
+        setHustlePalsCount(palsCount || 0);
+      }
 
       const { count: msgCount } = await supabase
         .from("messages")
@@ -74,7 +74,6 @@ if (palsError) {
 
       setMessagesCount(msgCount || 0);
 
-      // Fetch latest offers for the collapsible section
       const { data: offersData, error: offersError } = await supabase
         .from("hustle_offers")
         .select("id,title")
@@ -88,14 +87,12 @@ if (palsError) {
         setOffersFeed(offersData || []);
       }
 
-      // Example star usage data
       setStarUsage([
         { name: "Posts", value: 5 },
         { name: "Boosts", value: 3 },
         { name: "Messages", value: 2 },
       ]);
 
-      // Example engagements (you can replace with real data)
       setEngagements([
         "Jane joined your promo",
         "Alex responded to your offer",
@@ -148,7 +145,6 @@ if (palsError) {
             <li><a href="/dashboard/offers" onClick={handleNavClick}><i className="fas fa-tags"></i> Offers</a></li>
             <li><a href="/dashboard/help_center" onClick={handleNavClick}><i className="fas fa-question-circle"></i> Help Center</a></li>
 
-            {/* Premium Link - Highlighted */}
             <li style={{ background: "linear-gradient(90deg, #FFD700, #FFA500)", borderRadius: "8px", margin: "10px 0" }}>
               <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: "#fff", fontWeight: "bold" }}>
                 <FaCrown /> Go Premium
@@ -173,14 +169,18 @@ if (palsError) {
 
       <main className="main-content">
         <header>
-          <div className="user-info">
-            <span>The Community is here for you, {profile?.name || user.user_metadata?.name || user.email}</span>
-            <img src={profile?.avatar || "https://i.pravatar.cc/100"} alt="User" />
-            <button id="toggleMenuBtn" title="Toggle Menu" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              <i className="fas fa-bars"></i>
-            </button>
-          </div>
-        </header>
+  <div className="user-info-dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+    <LoggedInUser /> {/* Shows avatar + name + email */}
+    <button
+      id="toggleMenuBtn"
+      title="Toggle Menu"
+      onClick={() => setSidebarOpen(!sidebarOpen)}
+      style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '20px' }}
+    >
+      <i className="fas fa-bars"></i>
+    </button>
+  </div>
+</header>
 
         {/* Overview Cards */}
         <section className="overview">
@@ -191,7 +191,7 @@ if (palsError) {
           </div>
         </section>
 
-        {/* ✅ Premium Upgrade Highlight with Animation */}
+        {/* Premium Highlight */}
         <motion.section
           className="premium-highlight"
           style={{
@@ -238,7 +238,7 @@ if (palsError) {
           </a>
         </motion.section>
 
-        {/* Star AI Assistant */}
+        {/* Star AI */}
         <section className="star-ai-box">
           <h3><FaStar /> Star AI Assistant</h3>
           <p>{aiAdvice || "Click to get advice tailored to your hustle."}</p>
