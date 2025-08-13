@@ -6,18 +6,6 @@ import { useRouter } from 'next/navigation';
 import { FaCrown, FaStar, FaEdit, FaTrash, FaSave } from 'react-icons/fa';
 import '@/styles/hustlestreet.css';
 
-/**
- * HustleStreet Page (refactored)
- * - Tabs: Offers Feed | Top Creators | Hustle Requests | Post Offer | My Offers
- * - My Offers supports edit & delete
- * - Posting costs 15 stars (checked + deducted on submit)
- * - Modal shows remaining stars for clarity
- */
-
-/* -------------------------
-   Small presentational components
-   (kept inside file so you don't need extra files)
-   ------------------------- */
 
 function OfferCard({ offer }) {
   return (

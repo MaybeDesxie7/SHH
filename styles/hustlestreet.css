@@ -34,6 +34,15 @@
   border-color: #aaff00;
 }
 
+.feed-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 160px); /* adjust if header/tabs higher */
+  overflow-y: auto;
+  gap: 1rem;
+  padding-right: 0.5rem;
+}
+
 .feed-content {
   display: flex;
   flex-direction: column;
@@ -46,11 +55,61 @@
   padding: 1rem;
   box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
   transition: transform 0.3s ease;
+  width: 100%;
 }
 
 .offer-card:hover {
   transform: translateY(-4px);
 }
+
+.offer-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.reach-out-button,
+.partnership-button {
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+}
+
+.reach-out-button {
+  background-color: limegreen;
+  color: black;
+}
+
+.reach-out-button:hover {
+  background-color: #32cd32;
+  transform: scale(1.05);
+}
+
+.partnership-button {
+  background-color: #aaff00;
+  color: black;
+}
+
+.partnership-button:hover {
+  background-color: #ccff33;
+  transform: scale(1.05);
+}
+
+.stars-remaining {
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+
 
 .offer-header {
   display: flex;
