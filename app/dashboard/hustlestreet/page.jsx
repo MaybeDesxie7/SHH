@@ -1,48 +1,26 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { FaCrown, FaStar, FaEdit, FaTrash, FaSave } from 'react-icons/fa';
+import OfferCard from '@/app/dashboard/hustlestreet/OfferCard'; // uses the updated OfferCard above
 import '@/styles/hustlestreet.css';
 
-
-function OfferCard({ offer }) {
-  return (
-    <div className="offer-card">
-      <div className="offer-header">
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img
-            className="offer-avatar"
-            src={offer.public_profiles?.avatar || '/default-avatar.png'}
-            alt={offer.public_profiles?.name || 'avatar'}
-          />
-          <div className="offer-meta">
-            <p className="offer-name">{offer.public_profiles?.name || 'Unknown'}</p>
-            <p className="offer-time">{new Date(offer.created_at).toLocaleString()}</p>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {offer.tag && <span className="offer-tag">{offer.tag}</span>}
-          <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
-            <FaStar style={{ marginRight: 6, color: '#FFD700' }} />
-            {offer.stars_used || 0}
-          </div>
-        </div>
-      </div>
-
-      <div className="offer-body">
-        <h4 className="offer-title">{offer.title}</h4>
-        <p className="offer-description">{offer.description}</p>
-      </div>
-
-      <div className="offer-footer">
-        <button className="reach-out-button">Reach Out</button>
-      </div>
-    </div>
-  );
-}
+/**
+ * HustleStreet Page
+ * Tabs:
+ *  - Offers Feed
+ *  - Top Creators
+ *  - Hustle Requests (incoming)
+ *  - Post Offer (opens modal)
+ *  - My Offers
+ *
+ * Requests:
+ *  - Offer feed cards now include "🤝 Request Partnership" and "💬 Reach Out"
+ *  - Cards show optional user rating (from public_profiles.rating if present)
+ *  - Post Offer modal layout fixed to avoid overlapping and ensure clean mobile UX
+ */
 
 function MyOfferCard({ offer, onEdit, onDelete }) {
   return (
@@ -89,7 +67,8 @@ function MyOfferCard({ offer, onEdit, onDelete }) {
 }
 
 /* -------------------------
-   PostOfferModal (used for create & edit)
+   PostOfferModal (create & edit)
+   - Layout is constrained, scrollable, and non-overlapping on mobile
    ------------------------- */
 function PostOfferModal({
   open,
@@ -98,7 +77,6 @@ function PostOfferModal({
   initial = null,
   starsRemaining,
   isPosting,
-  showStarsRemaining = true,
 }) {
   const [title, setTitle] = useState(initial?.title || '');
   const [description, setDescription] = useState(initial?.description || '');
@@ -113,19 +91,58 @@ function PostOfferModal({
   if (!open) return null;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>{initial ? 'Edit Offer' : 'Post New Offer'}</h3>
+    <div
+      className="modal-backdrop"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={initial ? 'Edit Offer' : 'Post New Offer'}
+      style={{ zIndex: 1001 }}
+    >
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: '90vh',
+          width: 'min(92vw, 520px)',
+          overflow: 'hidden',
+          padding: '1.25rem',
+          gap: '0.75rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <h3 style={{ margin: 0 }}>{initial ? 'Edit Offer' : 'Post New Offer'}</h3>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              background: 'transparent',
+              border: '1px solid #333',
+              color: '#fff',
+              borderRadius: 8,
+              padding: '4px 10px',
+              cursor: 'pointer',
+            }}
+          >
+            ✕
+          </button>
+        </div>
 
-        {showStarsRemaining && (
-          <p className="stars-info" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FaStar style={{ color: '#FFD700' }} />
-            Stars remaining: {starsRemaining ?? '—'}
-            <span style={{ marginLeft: 8, color: '#aaa', fontSize: 12 }}>
-              (Posting costs 15 ⭐)
-            </span>
-          </p>
-        )}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 14,
+            color: '#cfcfcf',
+          }}
+        >
+          <FaStar style={{ color: '#FFD700' }} />
+          Stars remaining: {Number.isFinite(starsRemaining) ? starsRemaining : '—'}
+          <span style={{ marginLeft: 8, color: '#aaa' }}>(Posting costs 15 ⭐)</span>
+        </div>
 
         <form
           className="post-offer-form"
@@ -135,7 +152,18 @@ function PostOfferModal({
               alert('Title and description are required.');
               return;
             }
-            await onSubmit({ title: title.trim(), description: description.trim(), tag: tag?.trim() || null });
+            await onSubmit({
+              title: title.trim(),
+              description: description.trim(),
+              tag: tag?.trim() || null,
+            });
+          }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            overflowY: 'auto',
+            paddingRight: 2,
           }}
         >
           <input
@@ -146,6 +174,7 @@ function PostOfferModal({
             onChange={(e) => setTitle(e.target.value)}
             required
           />
+
           <textarea
             name="description"
             placeholder="Describe your offer"
@@ -154,6 +183,7 @@ function PostOfferModal({
             rows={5}
             required
           />
+
           <input
             type="text"
             name="tag"
@@ -183,7 +213,7 @@ function PostOfferModal({
    HustleStreetPage
    ------------------------- */
 export default function HustleStreetPage() {
-  const [activeTab, setActiveTab] = useState('offers'); // offers | top | requests | form | my
+  const [activeTab, setActiveTab] = useState('offers'); // 'offers' | 'top' | 'requests' | 'form' | 'my'
   const [offersFeed, setOffersFeed] = useState([]);
   const [topUsersFeed, setTopUsersFeed] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -202,7 +232,7 @@ export default function HustleStreetPage() {
   const router = useRouter();
   const isDesktop = typeof window !== 'undefined' ? window.innerWidth >= 1024 : false;
 
-  // Set sidebar initial
+  // Sidebar default state
   useEffect(() => {
     setSidebarOpen(isDesktop);
   }, [isDesktop]);
@@ -221,138 +251,172 @@ export default function HustleStreetPage() {
      Fetchers
      ------------------------- */
 
-  const fetchOffers = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('hustle_offers')
-      .select(`
-        id,
-        title,
-        description,
-        tag,
-        stars_used,
-        created_at,
-        user_id,
-        public_profiles ( name, avatar )
-      `)
-      .order('created_at', { ascending: false });
+  // ✅ Corrected Fetchers
 
-    if (error) {
-      console.error('Error fetching offers:', error);
-      setOffersFeed([]);
-    } else {
-      setOffersFeed(data || []);
-    }
+const fetchOffers = async () => {
+  setLoading(true);
+
+  const { data: offers, error: offersError } = await supabase
+    .from("hustle_offers")
+    .select("id, title, description, tag, stars_used, created_at, user_id")
+    .order("created_at", { ascending: false });
+
+  if (offersError) {
+    console.error("Error fetching offers:", offersError);
+    setOffersFeed([]);
     setLoading(false);
-  };
+    return;
+  }
 
-  const fetchTopUsers = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.rpc('get_top_users');
-    if (error) {
-      console.error('Error fetching top users:', error);
-      setTopUsersFeed([]);
-    } else {
-      setTopUsersFeed(data || []);
-    }
+  if (!offers || offers.length === 0) {
+    setOffersFeed([]);
     setLoading(false);
-  };
+    return;
+  }
 
-  const fetchRequests = async () => {
-    if (!currentUserId) return;
-    setLoading(true);
+  const userIds = offers.map((offer) => offer.user_id);
+  const { data: profiles, error: profilesError } = await supabase
+    .from("public_profiles")
+    .select("user_id, name, avatar")
+    .in("user_id", userIds);
 
-    const { data, error } = await supabase
-      .from('partnership_requests')
-      .select(`id, sender_id, receiver_id, status`)
-      .eq('receiver_id', currentUserId)
-      .eq('status', 'pending');
-
-    if (error) {
-      console.error('Failed to fetch requests:', error);
-      setRequests([]);
-      setLoading(false);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      setRequests([]);
-      setLoading(false);
-      return;
-    }
-
-    const senderIds = data.map((req) => req.sender_id);
-    const { data: senderProfiles, error: senderError } = await supabase
-      .from('public_profiles')
-      .select('user_id, name, avatar')
-      .in('user_id', senderIds);
-
-    if (senderError) {
-      console.error('Error fetching sender profiles:', senderError);
-      setRequests(data);
-      setLoading(false);
-      return;
-    }
-
-    const enrichedRequests = data.map((req) => {
-      const profile = senderProfiles.find((p) => p.user_id === req.sender_id);
-      return {
-        ...req,
-        sender: profile || null,
-      };
-    });
-
-    setRequests(enrichedRequests);
+  if (profilesError) {
+    console.error("Error fetching offer profiles:", profilesError);
+    setOffersFeed(offers);
     setLoading(false);
+    return;
+  }
+
+  const enrichedOffers = offers.map((offer) => ({
+    ...offer,
+    public_profiles: profiles.find((p) => p.user_id === offer.user_id) || null,
+  }));
+
+  setOffersFeed(enrichedOffers);
+  setLoading(false);
+};
+
+
+const fetchTopUsers = async () => {
+  setLoading(true);
+
+  const { data, error } = await supabase.rpc("get_top_users");
+
+  if (error) {
+    console.error("Error fetching top users. Did you create get_top_users RPC?", error);
+    setTopUsersFeed([]);
+  } else {
+    setTopUsersFeed(data || []);
+  }
+
+  setLoading(false);
+};
+
+const fetchRequests = async () => {
+  if (!currentUserId) return;
+  setLoading(true);
+
+  // 1. Fetch pending requests for current user
+  const { data: requests, error: requestsError } = await supabase
+  .from("partnership_requests")
+  .select("id, sender_id, receiver_id, status")
+  .eq("receiver_id", currentUserId)
+  .in("status", ["pending", "accepted"]); // ✅ fetch both
+
+if (requestsError) {
+  console.error("Failed to fetch requests:", requestsError);
+  setRequests([]);
+  setLoading(false);
+  return;
+}
+
+if (!requests || requests.length === 0) {
+  setRequests([]);
+  setLoading(false);
+  return;
+}
+
+// 2. Fetch sender profiles
+const senderIds = requests.map((req) => req.sender_id);
+const { data: senderProfiles, error: senderError } = await supabase
+  .from("public_profiles")
+  .select("user_id, name, avatar")
+  .in("user_id", senderIds);
+
+if (senderError) {
+  console.error("Error fetching sender profiles:", senderError);
+  setRequests(requests);
+  setLoading(false);
+  return;
+}
+
+// 3. Merge requests with sender profile
+const enrichedRequests = requests.map((req) => {
+  const profile = senderProfiles.find((p) => p.user_id === req.sender_id);
+  return {
+    ...req,
+    sender: profile || null,
+    isPartner: req.status === "accepted", // ✅ flag accepted ones
   };
+});
 
-  const fetchMyOffers = async () => {
-    const userResp = await supabase.auth.getUser();
-    const user = userResp?.data?.user;
-    if (!user) {
-      setMyOffers([]);
-      return;
-    }
+setRequests(enrichedRequests);
+setLoading(false);
 
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('hustle_offers')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+};
 
-    if (error) {
-      console.error('Error fetching my offers:', error);
-      setMyOffers([]);
-    } else {
-      setMyOffers(data || []);
-    }
-    setLoading(false);
-  };
+const fetchMyOffers = async () => {
+  const userResp = await supabase.auth.getUser();
+  const user = userResp?.data?.user;
 
-  const fetchStarsRemaining = async () => {
-    const userResp = await supabase.auth.getUser();
-    const user = userResp?.data?.user;
-    if (!user) {
-      setStarsRemaining(null);
-      return;
-    }
+  if (!user) {
+    setMyOffers([]);
+    return;
+  }
 
-    const { data, error } = await supabase
-      .from('stars')
-      .select('stars_remaining')
-      .eq('user_id', user.id)
-      .single();
+  setLoading(true);
 
-    if (error) {
-      console.error('Unable to fetch stars:', error);
-      setStarsRemaining(null);
-      return;
-    }
-    setStarsRemaining(data?.stars_remaining ?? 0);
-  };
+  const { data, error } = await supabase
+    .from("hustle_offers")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
 
-  // Load the correct feed on tab change
+  if (error) {
+    console.error("Error fetching my offers:", error);
+    setMyOffers([]);
+  } else {
+    setMyOffers(data || []);
+  }
+
+  setLoading(false);
+};
+
+const fetchStarsRemaining = async () => {
+  const userResp = await supabase.auth.getUser();
+  const user = userResp?.data?.user;
+
+  if (!user) {
+    setStarsRemaining(null);
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("stars")
+    .select("stars_remaining")
+    .eq("user_id", user.id)
+    .single();
+
+  if (error) {
+    console.error("Unable to fetch stars:", error);
+    setStarsRemaining(null);
+    return;
+  }
+
+  setStarsRemaining(data?.stars_remaining ?? 0);
+};
+
+  // Load on tab change
   useEffect(() => {
     if (activeTab === 'offers') fetchOffers();
     else if (activeTab === 'top') fetchTopUsers();
@@ -360,7 +424,7 @@ export default function HustleStreetPage() {
     else if (activeTab === 'my') fetchMyOffers();
   }, [activeTab, currentUserId]);
 
-  // real-time subscription to offers table
+  // realtime subscription to offers (refreshes offers and my offers)
   useEffect(() => {
     const channel = supabase
       .channel('offers')
@@ -380,10 +444,9 @@ export default function HustleStreetPage() {
   }, [activeTab]);
 
   /* -------------------------
-     Actions: Post, Edit, Delete
+     Actions
      ------------------------- */
 
-  // Create new offer (deduct 15 stars)
   const handlePostOffer = async (newOffer) => {
     setIsPosting(true);
 
@@ -414,7 +477,7 @@ export default function HustleStreetPage() {
       return;
     }
 
-    // Deduct 15 stars (we do this client-side via update to stars table)
+    // Deduct 15 stars
     const { error: updateError } = await supabase
       .from('stars')
       .update({ stars_remaining: starData.stars_remaining - 15 })
@@ -426,7 +489,7 @@ export default function HustleStreetPage() {
       return;
     }
 
-    // Insert the offer with stars_used = 15
+    // Insert the offer
     const { error } = await supabase.from('hustle_offers').insert([
       { ...newOffer, user_id: user.id, stars_used: 15 },
     ]);
@@ -434,13 +497,12 @@ export default function HustleStreetPage() {
     if (error) {
       console.error('Failed to post offer:', error);
       alert(`Error posting offer: ${error.message}`);
-      // revert stars deduction (best-effort)
-      await supabase.rpc('update_star_balance', { p_user_id: user.id, p_stars: 15 }).catch(() => {});
+      // best-effort revert of stars if you have a helper RPC:
+      // await supabase.rpc('update_star_balance', { p_user_id: user.id, p_stars: 15 }).catch(() => {});
       setIsPosting(false);
       return;
     }
 
-    // refresh relevant feeds & star balance
     if (activeTab === 'offers') fetchOffers();
     if (activeTab === 'my') fetchMyOffers();
     await fetchStarsRemaining();
@@ -449,13 +511,16 @@ export default function HustleStreetPage() {
     setIsPosting(false);
   };
 
-  // Edit an existing offer (only owner should be allowed by RLS)
   const handleSaveEdit = async (payload) => {
     if (!editingOffer) return;
     setIsPosting(true);
     const { error } = await supabase
       .from('hustle_offers')
-      .update({ title: payload.title, description: payload.description, tag: payload.tag })
+      .update({
+        title: payload.title,
+        description: payload.description,
+        tag: payload.tag,
+      })
       .eq('id', editingOffer.id);
 
     if (error) {
@@ -465,7 +530,6 @@ export default function HustleStreetPage() {
       return;
     }
 
-    // refresh
     await fetchMyOffers();
     await fetchOffers();
     setEditingOffer(null);
@@ -473,7 +537,6 @@ export default function HustleStreetPage() {
     setIsPosting(false);
   };
 
-  // Delete an offer
   const handleDeleteOffer = async (id) => {
     const confirmDelete = confirm('Delete this offer? This action cannot be undone.');
     if (!confirmDelete) return;
@@ -485,14 +548,9 @@ export default function HustleStreetPage() {
       return;
     }
 
-    // refresh
     setMyOffers((prev) => prev.filter((o) => o.id !== id));
     setOffersFeed((prev) => prev.filter((o) => o.id !== id));
   };
-
-  /* -------------------------
-     Modal openers / helpers
-     ------------------------- */
 
   const openPostModal = async () => {
     await fetchStarsRemaining();
@@ -501,7 +559,6 @@ export default function HustleStreetPage() {
   };
 
   const openEditModal = async (offer) => {
-    // load star balance as well just for visibility (not needed to edit)
     await fetchStarsRemaining();
     setEditingOffer(offer);
     setShowModal(true);
@@ -511,21 +568,25 @@ export default function HustleStreetPage() {
     if (!isDesktop) setSidebarOpen(false);
   }
 
-  /* -------------------------
-     Simple accept/reject for partnership_requests
-     ------------------------- */
+  // Accept / Reject partnership requests
   const handleAccept = async (id) => {
-    const { error } = await supabase.from('partnership_requests').update({ status: 'accepted' }).eq('id', id);
+    const { error } = await supabase
+      .from('partnership_requests')
+      .update({ status: 'accepted' })
+      .eq('id', id);
     if (!error) fetchRequests();
   };
 
   const handleReject = async (id) => {
-    const { error } = await supabase.from('partnership_requests').delete().eq('id', id);
+    const { error } = await supabase
+      .from('partnership_requests')
+      .delete()
+      .eq('id', id);
     if (!error) fetchRequests();
   };
 
   /* -------------------------
-     JSX render
+     Render
      ------------------------- */
 
   return (
@@ -579,12 +640,32 @@ export default function HustleStreetPage() {
                 <i className="fas fa-question-circle" /> Help Center
               </a>
             </li>
-            <li style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)', borderRadius: '8px', margin: '10px 0' }}>
-              <a href="/dashboard/Premium" onClick={handleNavClick} style={{ color: '#fff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <li
+              style={{
+                background: 'linear-gradient(90deg, #FFD700, #FFA500)',
+                borderRadius: '8px',
+                margin: '10px 0',
+              }}
+            >
+              <a
+                href="/dashboard/Premium"
+                onClick={handleNavClick}
+                style={{
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
                 <FaCrown /> Go Premium
               </a>
             </li>
-            <li><a href="/dashboard/settings" onClick={handleNavClick}><i className="fas fa-cog"></i> Settings</a></li>
+            <li>
+              <a href="/dashboard/settings" onClick={handleNavClick}>
+                <i className="fas fa-cog" /> Settings
+              </a>
+            </li>
             <li>
               <button
                 onClick={async () => {
@@ -624,39 +705,59 @@ export default function HustleStreetPage() {
         </header>
 
         <div className="tabs-navigator" role="tablist" aria-label="Hustle Street Tabs">
-          <button className={`tab-button ${activeTab === 'offers' ? 'active' : ''}`} onClick={() => setActiveTab('offers')}>
+          <button
+            className={`tab-button ${activeTab === 'offers' ? 'active' : ''}`}
+            onClick={() => setActiveTab('offers')}
+          >
             Offers Feed
           </button>
-          <button className={`tab-button ${activeTab === 'top' ? 'active' : ''}`} onClick={() => setActiveTab('top')}>
+          <button
+            className={`tab-button ${activeTab === 'top' ? 'active' : ''}`}
+            onClick={() => setActiveTab('top')}
+          >
             Top Creators
           </button>
-          <button className={`tab-button ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => setActiveTab('requests')}>
+          <button
+            className={`tab-button ${activeTab === 'requests' ? 'active' : ''}`}
+            onClick={() => setActiveTab('requests')}
+          >
             Hustle Requests
           </button>
-          <button className={`tab-button ${activeTab === 'form' ? 'active' : ''}`} onClick={() => { setActiveTab('form'); openPostModal(); }}>
+          <button
+            className={`tab-button ${activeTab === 'form' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('form');
+              openPostModal();
+            }}
+          >
             Post Offer
           </button>
-          <button className={`tab-button ${activeTab === 'my' ? 'active' : ''}`} onClick={() => setActiveTab('my')}>
+          <button
+            className={`tab-button ${activeTab === 'my' ? 'active' : ''}`}
+            onClick={() => setActiveTab('my')}
+          >
             My Offers
           </button>
         </div>
 
-        <div className="feed-content">
+        <div className="feed-content" style={{ paddingBottom: '4.5rem' }}>
           {loading ? (
             <p className="loading">Loading...</p>
-
           ) : activeTab === 'offers' ? (
             offersFeed.length > 0 ? (
-              offersFeed.map((offer) => <OfferCard key={offer.id} offer={offer} />)
+              offersFeed.map((offer) => <OfferCard key={offer.id} {...offer} />)
             ) : (
               <p>No offers found.</p>
             )
-
           ) : activeTab === 'top' ? (
             topUsersFeed.length > 0 ? (
               topUsersFeed.map((user) => (
                 <div className="top-user-card" key={user.user_id}>
-                  <img className="top-user-avatar" src={user.avatar || '/default-avatar.png'} alt={user.name || 'avatar'} />
+                  <img
+                    className="top-user-avatar"
+                    src={user.avatar || '/default-avatar.png'}
+                    alt={user.name || 'avatar'}
+                  />
                   <div className="top-user-info">
                     <h4>{user.name}</h4>
                     <p>{user.votes ? `${user.votes} votes` : 'Top creator'}</p>
@@ -666,34 +767,46 @@ export default function HustleStreetPage() {
             ) : (
               <p>No top users found.</p>
             )
-
           ) : activeTab === 'requests' ? (
             requests.length > 0 ? (
               requests.map((req) => (
                 <div key={req.id} className="hustle-request-card">
-                  <img src={req.sender?.avatar || '/default-avatar.png'} alt="avatar" className="hustle-request-avatar" />
+                  <img
+                    src={req.sender?.avatar || '/default-avatar.png'}
+                    alt="avatar"
+                    className="hustle-request-avatar"
+                  />
                   <div className="hustle-request-info">
                     <h4>{req.sender?.name || 'Anonymous'}</h4>
                     <p>Wants to collaborate with you.</p>
                   </div>
                   <div className="hustle-request-actions">
-                    <button className="accept-btn" onClick={() => handleAccept(req.id)}>Accept</button>
-                    <button className="reject-btn" onClick={() => handleReject(req.id)}>Reject</button>
+                    <button className="accept-btn" onClick={() => handleAccept(req.id)}>
+                      Accept
+                    </button>
+                    <button className="reject-btn" onClick={() => handleReject(req.id)}>
+                      Reject
+                    </button>
                   </div>
                 </div>
               ))
             ) : (
               <p>No pending requests.</p>
             )
-
           ) : activeTab === 'form' ? (
             <div className="form-placeholder">
-              <p>Click the + button (bottom-right) to post a new offer.</p>
+              <p>Click the ★ button (bottom-right) to post a new offer.</p>
             </div>
-
           ) : activeTab === 'my' ? (
             myOffers.length > 0 ? (
-              myOffers.map((o) => <MyOfferCard key={o.id} offer={o} onEdit={(offer) => openEditModal(offer)} onDelete={handleDeleteOffer} />)
+              myOffers.map((o) => (
+                <MyOfferCard
+                  key={o.id}
+                  offer={o}
+                  onEdit={(offer) => openEditModal(offer)}
+                  onDelete={handleDeleteOffer}
+                />
+              ))
             ) : (
               <p>No offers yet. Click Post Offer to create one.</p>
             )
@@ -701,7 +814,7 @@ export default function HustleStreetPage() {
         </div>
 
         {/* Floating Action Button */}
-        <button className="fab" title="Post Offer" onClick={openPostModal}>
+        <button className="fab" title="Post Offer" onClick={openPostModal} aria-label="Post Offer">
           <FaStar />
         </button>
 
@@ -716,7 +829,6 @@ export default function HustleStreetPage() {
           initial={editingOffer}
           starsRemaining={starsRemaining}
           isPosting={isPosting}
-          showStarsRemaining={true}
         />
       </main>
     </div>
