@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { FaCrown } from "react-icons/fa"; // <-- Added this import
+import { FaCrown } from "react-icons/fa";
 
 export default function HustleChallengesPage() {
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function HustleChallengesPage() {
     { label: "5 Stars ⭐", value: 5, weight: 20 },
     { label: "10 Stars ⭐⭐", value: 10, weight: 15 },
     { label: "Premium Offer 🎁", value: "premium_offer", weight: 6 },
-    { label: "Free AI Session 🧠", value: "ai_session", weight: 7 },
+    { label: "Star AI 1 Month Premium 💻", value: "star_ai_premium", weight: 7 },
     { label: "Try Again 🚫", value: 0, weight: 35 },
     { label: "20 Stars ⭐⭐⭐", value: 20, weight: 8 },
     { label: "Profile Boost ⚡", value: "profile_boost", weight: 5 },
@@ -65,7 +65,6 @@ export default function HustleChallengesPage() {
 
       if (!spinsError && spinsData) {
         if (spinsData.last_spin_date !== today) {
-          // Reset spins for the new day
           const spinsToSet = profileData?.is_premium ? 5 : 2;
           await supabase
             .from("user_spins")
@@ -76,7 +75,6 @@ export default function HustleChallengesPage() {
           setFreeSpins(spinsData.free_spins_remaining);
         }
       } else {
-        // Insert spins record if none exists
         const spinsToSet = profileData?.is_premium ? 5 : 2;
         await supabase.from("user_spins").insert({
           user_id: user.id,
@@ -220,9 +218,7 @@ export default function HustleChallengesPage() {
       setSpinResult(reward.label);
       setIsSpinning(false);
 
-      // Immediate reward handling
       if (typeof reward.value === "number" && reward.value > 0) {
-        // Add stars reward
         const updatedStars = stars - (freeSpins > 0 ? 0 : 5) + reward.value;
         setStars(updatedStars);
         await supabase
@@ -231,7 +227,6 @@ export default function HustleChallengesPage() {
           .eq("user_id", user.id);
       } else if (reward.value === "premium_offer") {
         alert("You won a Premium Offer! You get a premium book, 25 stars, and 5 free spins.");
-        // Call the SQL function to apply all perks at once (assumes function is created)
         await supabase.rpc("apply_perks_for_user", {
           p_user_id: user.id,
           p_add_stars: 25,
@@ -239,7 +234,6 @@ export default function HustleChallengesPage() {
           p_add_premium_book: true,
           p_add_profile_boost: false,
         });
-        // Refresh stars and spins after applying perks
         const { data: starData } = await supabase
           .from("stars")
           .select("stars_remaining")
@@ -252,12 +246,18 @@ export default function HustleChallengesPage() {
           .eq("user_id", user.id)
           .single();
         if (spinsData) setFreeSpins(spinsData.free_spins_remaining);
-      } else if (reward.value === "ai_session") {
-        alert("You won a Free AI Session! Contact support to redeem.");
-        // TODO: Add AI session backend logic if needed
+      } else if (reward.value === "star_ai_premium") {
+        alert("You won Star AI 1 Month Premium ($4.99)! Enjoy premium AI features.");
+        await supabase.rpc("apply_perks_for_user", {
+          p_user_id: user.id,
+          p_add_stars: 0,
+          p_free_spins: 0,
+          p_add_premium_book: false,
+          p_add_profile_boost: false,
+          p_add_star_ai_premium: true, // assume backend handles this
+        });
       } else if (reward.value === "profile_boost") {
         alert("Your profile is boosted for 24 hours!");
-        // Call SQL function or update user_perks for profile_boost
         await supabase.rpc("apply_perks_for_user", {
           p_user_id: user.id,
           p_add_stars: 0,

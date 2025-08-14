@@ -320,7 +320,7 @@ export default function PremiumPage() {
             </p>
           ) : (
             <button className="btn premium-btn" onClick={handleSubscribePremium} disabled={loading}>
-              {loading ? "Loading..." : "Subscribe for $9.99/month"}
+              {loading ? "Loading..." : "Subscribe for $12.49/month"}
             </button>
           )}
         </section>
@@ -351,7 +351,7 @@ export default function PremiumPage() {
             </div>
             <div className="stars-card">
               <h3>Star AI</h3>
-              <p>$2.49/month</p>
+              <p>$4.99/month</p>
               <button className="btn" onClick={() => handleBuyStars("star_ai")} disabled={loading}>
                 Unlock
               </button>
