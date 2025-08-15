@@ -1,0 +1,103 @@
+body {
+  background-color: #000;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+}
+
+.test-container {
+  max-width: 900px;
+  margin: 50px auto;
+  background: #111;
+  color: #fff;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: 25px;
+  text-align: center;
+  color: limegreen;
+}
+
+.test-controls {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+  justify-content: center;
+}
+
+.test-controls select, .test-controls button {
+  padding: 12px 18px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: 1px solid limegreen;
+  background: #111;
+  color: #fff;
+  transition: all 0.2s;
+}
+
+.test-controls select:focus, .test-controls button:focus {
+  outline: none;
+  border-color: #00ff00;
+}
+
+.test-controls button {
+  cursor: pointer;
+  background: limegreen;
+  color: #000;
+  font-weight: bold;
+}
+
+.test-controls button:hover {
+  background: #32cd32;
+  transform: scale(1.05);
+}
+
+.question-header {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: limegreen;
+}
+
+.question-text {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.option-button {
+  text-align: left;
+  padding: 12px 20px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: 1px solid limegreen;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.option-button:hover {
+  background: limegreen;
+  color: #000;
+  transform: scale(1.03);
+}
+
+.score-display {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: limegreen;
+  text-align: center;
+}
